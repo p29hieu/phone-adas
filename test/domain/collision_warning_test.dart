@@ -45,6 +45,26 @@ void main() {
   });
 
   group('CollisionMonitor TTC', () {
+    test('measured closing speed (radar) triggers with no EMA warm-up', () {
+      final m = CollisionMonitor();
+      // Single radar reading: 20 m gap closing at 10 m/s -> TTC 2 s.
+      final alert = m.update(
+        distanceM: 20,
+        egoSpeedKmh: 50,
+        ts: at(0),
+        measuredClosingMps: 10,
+      );
+      expect(alert, AdasAlert.collision);
+      // 10 m at 10 m/s -> TTC 1 s -> critical.
+      final critical = m.update(
+        distanceM: 10,
+        egoSpeedKmh: 50,
+        ts: at(0.1),
+        measuredClosingMps: 10,
+      );
+      expect(critical, AdasAlert.collisionCritical);
+    });
+
     test('closing fast triggers collision immediately, no 2 s delay', () {
       final m = CollisionMonitor();
       // Approach at 10 m/s: 40 m -> 30 m over 1 s, TTC ~= 3 s then shrinking.

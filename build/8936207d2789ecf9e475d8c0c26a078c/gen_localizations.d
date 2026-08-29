@@ -1,1 +1,0 @@
- /Users/hieu/Documents/phone_adas/lib/l10n/app_localizations_en.dart /Users/hieu/Documents/phone_adas/lib/l10n/app_localizations_vi.dart /Users/hieu/Documents/phone_adas/lib/l10n/app_localizations.dart:  /Users/hieu/Documents/phone_adas/l10n.yaml /Users/hieu/Documents/phone_adas/lib/l10n/app_en.arb /Users/hieu/Documents/phone_adas/lib/l10n/app_vi.arb

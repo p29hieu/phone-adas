@@ -34,10 +34,14 @@ class CollisionMonitor {
 
   double get closingSpeedMps => _closingMps;
 
+  /// [measuredClosingMps] — closing speed measured by an external range
+  /// sensor (e.g. the car's factory ACC radar over CAN). When provided it
+  /// replaces the camera-derived EMA: no warm-up, no differentiation noise.
   AdasAlert update({
     required double? distanceM,
     required double egoSpeedKmh,
     required DateTime ts,
+    double? measuredClosingMps,
   }) {
     if (distanceM == null) {
       // Lead lost: keep gap state armed briefly is not needed for v1.
@@ -48,7 +52,9 @@ class CollisionMonitor {
       return AdasAlert.none;
     }
 
-    if (_lastDistance != null && _lastTs != null) {
+    if (measuredClosingMps != null) {
+      _closingMps = measuredClosingMps;
+    } else if (_lastDistance != null && _lastTs != null) {
       final dt = ts.difference(_lastTs!).inMicroseconds / 1e6;
       if (dt > 0 && dt < 2) {
         final v = (_lastDistance! - distanceM) / dt;

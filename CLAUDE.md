@@ -24,6 +24,10 @@ gaps) with on-device AI. iOS-first, Android kept buildable.
   `Firebase.apps.isNotEmpty` guard (see `crashlyticsLog`).
 - Native channel contract is frozen (see README). Changing it means
   updating BOTH native cores + `AdasChannel` + this note.
+- Planned external range sources (factory ACC radar via CAN/OBD) enter at
+  the DART layer, not the platform channel: they feed
+  `CollisionMonitor.update(measuredClosingMps: ...)` and lead distance
+  directly. Camera remains the only source of bboxes/classes.
 
 ## Commands
 

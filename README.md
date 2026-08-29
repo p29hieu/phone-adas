@@ -112,4 +112,8 @@ is 100% covered by `test/domain/`.
    camera intrinsics for f, GPS self-calibration of per-class widths
 3. Android vision core: CameraX → center-crop → LiteRT (GPU/QNN)
 4. Google sign-in, AI assistant, live traffic sharing, in-app map, SOS call
-5. External UVC camera source + car-screen projection (rooted Android)
+5. External range sensors, starting with the car's factory ACC radar over
+   CAN bus (OBD/ESP32 -> BLE/TCP -> a Dart-level range source; radar then
+   drives lead distance + measured closing speed in CollisionMonitor, while
+   the camera keeps multi-vehicle overlay and classification)
+6. External UVC camera source + car-screen projection (rooted Android)
