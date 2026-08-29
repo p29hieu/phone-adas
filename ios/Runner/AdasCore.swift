@@ -76,22 +76,28 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler {
   private func emitMockFrame() {
     guard let sink else { return }
     phase += 0.1
-    // A "car" drifting between roughly 30 m and 70 m (w = 1.8 * 1500 / d).
-    let w = 65.0 + 25.0 * sin(phase / 3.0)
+    // Three mock vehicles matching the product mockup:
+    // motorcycle left ~6 m, car center drifting 30-70 m, car right ~25 m.
+    // w = realWidth * 1500 / distance.
+    let dMoto = 6.2 + 0.4 * sin(phase / 1.7)
+    let dCenter = 50.0 + 20.0 * sin(phase / 3.0)
+    let dRight = 25.4 + 1.5 * sin(phase / 2.3)
+    let wMoto = 0.8 * 1500.0 / dMoto
+    let wCenter = 1.8 * 1500.0 / dCenter
+    let wRight = 1.8 * 1500.0 / dRight
+    func box(_ cls: String, _ cx: Double, _ groundY: Double, _ w: Double, _ hRatio: Double, _ conf: Double) -> [String: Any] {
+      let h = w * hRatio
+      return ["cls": cls, "conf": conf, "x": cx - w / 2.0, "y": groundY - h, "w": w, "h": h]
+    }
     let frame: [String: Any] = [
       "ts": Int(Date().timeIntervalSince1970 * 1000),
       "mock": true,
       "frameW": 1920,
       "frameH": 1080,
       "detections": [
-        [
-          "cls": "car",
-          "conf": 0.92,
-          "x": 960.0 - w / 2.0,
-          "y": 520.0,
-          "w": w,
-          "h": w * 0.8,
-        ] as [String: Any],
+        box("motorcycle", 620, 760, wMoto, 1.6, 0.88),
+        box("car", 960, 620, wCenter, 0.8, 0.93),
+        box("car", 1330, 660, wRight, 0.8, 0.91),
       ],
     ]
     sink(frame)

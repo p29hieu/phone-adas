@@ -81,4 +81,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mockModeBadge => 'MOCK DATA';
+
+  @override
+  String get toolbarRecord => 'Record';
+
+  @override
+  String get toolbarPhoto => 'Photo';
+
+  @override
+  String get toolbarSettings => 'Settings';
+
+  @override
+  String get toolbarHistory => 'History';
+
+  @override
+  String get comingSoon => 'Coming soon';
 }

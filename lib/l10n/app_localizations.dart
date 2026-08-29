@@ -235,6 +235,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'MOCK DATA'**
   String get mockModeBadge;
+
+  /// No description provided for @toolbarRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Record'**
+  String get toolbarRecord;
+
+  /// No description provided for @toolbarPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo'**
+  String get toolbarPhoto;
+
+  /// No description provided for @toolbarSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get toolbarSettings;
+
+  /// No description provided for @toolbarHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get toolbarHistory;
+
+  /// No description provided for @comingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon'**
+  String get comingSoon;
 }
 
 class _AppLocalizationsDelegate

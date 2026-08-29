@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show Rect;
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geocoding/geocoding.dart';
@@ -72,6 +73,19 @@ class HudCubit extends Cubit<HudState> {
     final lead = _estimator.pickLead(frame);
     final distance = lead == null ? null : _estimator.estimate(lead);
 
+    final vehicles = <TrackedVehicle>[];
+    for (final d in frame.detections) {
+      if (d.conf < DistanceEstimator.minConfidence) continue;
+      final dist = _estimator.estimate(d);
+      if (dist == null) continue;
+      vehicles.add(TrackedVehicle(
+        cls: d.cls,
+        rect: Rect.fromLTWH(d.x, d.y, d.w, d.h),
+        distanceM: dist,
+        isLead: identical(d, lead),
+      ));
+    }
+
     final alert = _collision.update(
       distanceM: distance,
       egoSpeedKmh: state.speedKmh,
@@ -94,6 +108,9 @@ class HudCubit extends Cubit<HudState> {
     emit(state.copyWith(
       mock: frame.mock,
       leadDistanceM: distance,
+      vehicles: vehicles,
+      frameW: frame.frameW,
+      frameH: frame.frameH,
       requiredGapM: SafeDistance.legalMinimumMeters(state.speedKmh),
       alert: alert,
       departureCount: departed ? state.departureCount + 1 : null,

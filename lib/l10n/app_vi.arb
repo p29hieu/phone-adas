@@ -22,5 +22,10 @@
   "settingsLanguageSystem": "Theo hệ thống",
   "camPermissionNeeded": "Cần quyền camera để đo khoảng cách",
   "locPermissionNeeded": "Cần quyền vị trí để hiển thị tốc độ và thời tiết",
-  "mockModeBadge": "DỮ LIỆU GIẢ LẬP"
+  "mockModeBadge": "DỮ LIỆU GIẢ LẬP",
+  "toolbarRecord": "Quay",
+  "toolbarPhoto": "Chụp",
+  "toolbarSettings": "Cài đặt",
+  "toolbarHistory": "Lịch sử",
+  "comingSoon": "Sắp có"
 }

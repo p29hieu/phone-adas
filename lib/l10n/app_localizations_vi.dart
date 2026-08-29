@@ -80,4 +80,19 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mockModeBadge => 'DỮ LIỆU GIẢ LẬP';
+
+  @override
+  String get toolbarRecord => 'Quay';
+
+  @override
+  String get toolbarPhoto => 'Chụp';
+
+  @override
+  String get toolbarSettings => 'Cài đặt';
+
+  @override
+  String get toolbarHistory => 'Lịch sử';
+
+  @override
+  String get comingSoon => 'Sắp có';
 }

@@ -8,11 +8,9 @@
 import 'dart:io'; // flutter_ignore: dart_io_import.
 import 'package:geocoding_android/geocoding_android.dart' as geocoding_android;
 import 'package:geolocator_android/geolocator_android.dart' as geolocator_android;
-import 'package:path_provider_android/path_provider_android.dart' as path_provider_android;
 import 'package:shared_preferences_android/shared_preferences_android.dart' as shared_preferences_android;
 import 'package:geocoding_darwin/geocoding_darwin.dart' as geocoding_darwin;
 import 'package:geolocator_apple/geolocator_apple.dart' as geolocator_apple;
-import 'package:path_provider_foundation/path_provider_foundation.dart' as path_provider_foundation;
 import 'package:shared_preferences_foundation/shared_preferences_foundation.dart' as shared_preferences_foundation;
 import 'package:geolocator_linux/geolocator_linux.dart' as geolocator_linux;
 import 'package:package_info_plus/package_info_plus.dart' as package_info_plus;
@@ -21,7 +19,6 @@ import 'package:shared_preferences_linux/shared_preferences_linux.dart' as share
 import 'package:wakelock_plus/wakelock_plus.dart' as wakelock_plus;
 import 'package:geocoding_darwin/geocoding_darwin.dart' as geocoding_darwin;
 import 'package:geolocator_apple/geolocator_apple.dart' as geolocator_apple;
-import 'package:path_provider_foundation/path_provider_foundation.dart' as path_provider_foundation;
 import 'package:shared_preferences_foundation/shared_preferences_foundation.dart' as shared_preferences_foundation;
 import 'package:wakelock_plus/wakelock_plus.dart' as wakelock_plus;
 import 'package:package_info_plus/package_info_plus.dart' as package_info_plus;
@@ -54,15 +51,6 @@ class _PluginRegistrant {
       }
 
       try {
-        path_provider_android.PathProviderAndroid.registerWith();
-      } catch (err) {
-        print(
-          '`path_provider_android` threw an error: $err. '
-          'The app may not function as expected until you remove this plugin from pubspec.yaml'
-        );
-      }
-
-      try {
         shared_preferences_android.SharedPreferencesAndroid.registerWith();
       } catch (err) {
         print(
@@ -86,15 +74,6 @@ class _PluginRegistrant {
       } catch (err) {
         print(
           '`geolocator_apple` threw an error: $err. '
-          'The app may not function as expected until you remove this plugin from pubspec.yaml'
-        );
-      }
-
-      try {
-        path_provider_foundation.PathProviderFoundation.registerWith();
-      } catch (err) {
-        print(
-          '`path_provider_foundation` threw an error: $err. '
           'The app may not function as expected until you remove this plugin from pubspec.yaml'
         );
       }
@@ -169,15 +148,6 @@ class _PluginRegistrant {
       } catch (err) {
         print(
           '`geolocator_apple` threw an error: $err. '
-          'The app may not function as expected until you remove this plugin from pubspec.yaml'
-        );
-      }
-
-      try {
-        path_provider_foundation.PathProviderFoundation.registerWith();
-      } catch (err) {
-        print(
-          '`path_provider_foundation` threw an error: $err. '
           'The app may not function as expected until you remove this plugin from pubspec.yaml'
         );
       }

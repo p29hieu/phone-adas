@@ -73,8 +73,15 @@ object AdasCore {
     private fun emitMockFrame() {
         val events = sink ?: return
         phase += 0.1
-        // A "car" drifting between roughly 30 m and 70 m.
-        val w = 65.0 + 25.0 * sin(phase / 3.0)
+        // Three mock vehicles matching the product mockup:
+        // motorcycle left ~6 m, car center drifting 30-70 m, car right ~25 m.
+        val dMoto = 6.2 + 0.4 * sin(phase / 1.7)
+        val dCenter = 50.0 + 20.0 * sin(phase / 3.0)
+        val dRight = 25.4 + 1.5 * sin(phase / 2.3)
+        fun box(cls: String, cx: Double, groundY: Double, w: Double, hRatio: Double, conf: Double): Map<String, Any> {
+            val h = w * hRatio
+            return mapOf("cls" to cls, "conf" to conf, "x" to cx - w / 2.0, "y" to groundY - h, "w" to w, "h" to h)
+        }
         events.success(
             mapOf(
                 "ts" to System.currentTimeMillis(),
@@ -82,14 +89,9 @@ object AdasCore {
                 "frameW" to 1920,
                 "frameH" to 1080,
                 "detections" to listOf(
-                    mapOf(
-                        "cls" to "car",
-                        "conf" to 0.92,
-                        "x" to 960.0 - w / 2.0,
-                        "y" to 520.0,
-                        "w" to w,
-                        "h" to w * 0.8,
-                    ),
+                    box("motorcycle", 620.0, 760.0, 0.8 * 1500.0 / dMoto, 1.6, 0.88),
+                    box("car", 960.0, 620.0, 1.8 * 1500.0 / dCenter, 0.8, 0.93),
+                    box("car", 1330.0, 660.0, 1.8 * 1500.0 / dRight, 0.8, 0.91),
                 ),
             ),
         )

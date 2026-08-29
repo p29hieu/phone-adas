@@ -4,7 +4,13 @@
   "hudSpeedUnit": "km/h",
   "hudDistanceToLead": "Distance",
   "hudRequiredGap": "required {meters} m",
-  "@hudRequiredGap": {"placeholders": {"meters": {"type": "int"}}},
+  "@hudRequiredGap": {
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
   "hudNoLeadVehicle": "No vehicle ahead",
   "warnKeepDistance": "Keep your distance",
   "warnCollision": "Brake! Collision risk",
@@ -23,5 +29,10 @@
   "settingsLanguageSystem": "System default",
   "camPermissionNeeded": "Camera permission is required for distance measurement",
   "locPermissionNeeded": "Location permission is required for speed and weather",
-  "mockModeBadge": "MOCK DATA"
+  "mockModeBadge": "MOCK DATA",
+  "toolbarRecord": "Record",
+  "toolbarPhoto": "Photo",
+  "toolbarSettings": "Settings",
+  "toolbarHistory": "History",
+  "comingSoon": "Coming soon"
 }

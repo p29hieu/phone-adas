@@ -1,3 +1,5 @@
+import 'dart:ui' show Rect;
+
 import 'package:equatable/equatable.dart';
 
 import '../../domain/collision_warning.dart';
@@ -5,11 +7,36 @@ import '../../services/weather_service.dart';
 
 enum HudStatus { initializing, running, locationDenied }
 
+/// A detected vehicle with its estimated distance, ready for the AR overlay.
+class TrackedVehicle extends Equatable {
+  const TrackedVehicle({
+    required this.cls,
+    required this.rect,
+    required this.distanceM,
+    required this.isLead,
+  });
+
+  final String cls;
+
+  /// Bounding box in source-frame pixels (see HudState.frameW/frameH).
+  final Rect rect;
+  final double distanceM;
+
+  /// True for the vehicle used for gap/collision alerts (in our lane).
+  final bool isLead;
+
+  @override
+  List<Object?> get props => [cls, rect, distanceM, isLead];
+}
+
 class HudState extends Equatable {
   const HudState({
     this.status = HudStatus.initializing,
     this.mock = false,
     this.leadDistanceM,
+    this.vehicles = const [],
+    this.frameW = 1920,
+    this.frameH = 1080,
     this.requiredGapM = 0,
     this.alert = AdasAlert.none,
     this.departureCount = 0,
@@ -26,6 +53,11 @@ class HudState extends Equatable {
   /// True while the native core emits synthetic detections (no ML model yet).
   final bool mock;
   final double? leadDistanceM;
+
+  /// All valid detections with distances, for the AR overlay.
+  final List<TrackedVehicle> vehicles;
+  final int frameW;
+  final int frameH;
   final double requiredGapM;
   final AdasAlert alert;
 
@@ -44,6 +76,9 @@ class HudState extends Equatable {
     HudStatus? status,
     bool? mock,
     Object? leadDistanceM = _unset,
+    List<TrackedVehicle>? vehicles,
+    int? frameW,
+    int? frameH,
     double? requiredGapM,
     AdasAlert? alert,
     int? departureCount,
@@ -60,6 +95,9 @@ class HudState extends Equatable {
         leadDistanceM: identical(leadDistanceM, _unset)
             ? this.leadDistanceM
             : leadDistanceM as double?,
+        vehicles: vehicles ?? this.vehicles,
+        frameW: frameW ?? this.frameW,
+        frameH: frameH ?? this.frameH,
         requiredGapM: requiredGapM ?? this.requiredGapM,
         alert: alert ?? this.alert,
         departureCount: departureCount ?? this.departureCount,
@@ -76,6 +114,9 @@ class HudState extends Equatable {
         status,
         mock,
         leadDistanceM,
+        vehicles,
+        frameW,
+        frameH,
         requiredGapM,
         alert,
         departureCount,

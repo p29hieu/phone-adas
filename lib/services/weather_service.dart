@@ -1,6 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
 
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Simplified sky condition mapped from WMO weather codes.
@@ -32,35 +32,46 @@ class WeatherSnapshot {
 }
 
 /// Current weather via Open-Meteo (free, no API key, no account — keeps the
-/// no-login requirement). Offline-tolerant: last good result is cached and
-/// returned with [WeatherSnapshot.isStale] when the network is unavailable.
+/// no-login requirement). Uses dart:io directly — no HTTP package dependency.
+/// Offline-tolerant: the last good result is cached and returned with
+/// [WeatherSnapshot.isStale] when the network is unavailable.
 class WeatherService {
-  WeatherService({http.Client? client}) : _client = client ?? http.Client();
+  WeatherService({HttpClient Function()? clientFactory})
+      : _clientFactory = clientFactory ?? HttpClient.new;
 
-  final http.Client _client;
+  final HttpClient Function() _clientFactory;
 
   static const _cacheKey = 'weather_cache_v1';
   static const _timeout = Duration(seconds: 8);
 
   Future<WeatherSnapshot?> fetch(double lat, double lon) async {
     try {
-      final uri = Uri.https('api.open-meteo.com', '/v1/forecast', {
-        'latitude': lat.toStringAsFixed(4),
-        'longitude': lon.toStringAsFixed(4),
-        'current': 'temperature_2m,weather_code',
-      });
-      final res = await _client.get(uri).timeout(_timeout);
-      if (res.statusCode != 200) throw http.ClientException('HTTP ${res.statusCode}');
-      final body = jsonDecode(res.body) as Map<String, dynamic>;
-      final current = body['current'] as Map<String, dynamic>;
-      final snapshot = WeatherSnapshot(
-        tempC: (current['temperature_2m'] as num).toDouble(),
-        kind: kindFromWmo((current['weather_code'] as num).toInt()),
-        fetchedAt: DateTime.now(),
-        isStale: false,
-      );
-      await _saveCache(snapshot);
-      return snapshot;
+      final client = _clientFactory()..connectionTimeout = _timeout;
+      try {
+        final uri = Uri.https('api.open-meteo.com', '/v1/forecast', {
+          'latitude': lat.toStringAsFixed(4),
+          'longitude': lon.toStringAsFixed(4),
+          'current': 'temperature_2m,weather_code',
+        });
+        final request = await client.getUrl(uri);
+        final response = await request.close().timeout(_timeout);
+        if (response.statusCode != 200) {
+          throw HttpException('HTTP ${response.statusCode}', uri: uri);
+        }
+        final body = await response.transform(utf8.decoder).join();
+        final json = jsonDecode(body) as Map<String, dynamic>;
+        final current = json['current'] as Map<String, dynamic>;
+        final snapshot = WeatherSnapshot(
+          tempC: (current['temperature_2m'] as num).toDouble(),
+          kind: kindFromWmo((current['weather_code'] as num).toInt()),
+          fetchedAt: DateTime.now(),
+          isStale: false,
+        );
+        await _saveCache(snapshot);
+        return snapshot;
+      } finally {
+        client.close(force: true);
+      }
     } catch (_) {
       return _loadCache();
     }

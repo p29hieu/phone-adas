@@ -2,22 +2,10 @@
   "configVersion": 2,
   "packages": [
     {
-      "name": "_fe_analyzer_shared",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/_fe_analyzer_shared-103.0.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.11"
-    },
-    {
       "name": "_flutterfire_internals",
       "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/_flutterfire_internals-1.3.77",
       "packageUri": "lib/",
       "languageVersion": "3.6"
-    },
-    {
-      "name": "analyzer",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/analyzer-13.3.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.11"
     },
     {
       "name": "args",
@@ -38,12 +26,6 @@
       "languageVersion": "2.14"
     },
     {
-      "name": "bloc_test",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/bloc_test-10.0.0",
-      "packageUri": "lib/",
-      "languageVersion": "2.14"
-    },
-    {
       "name": "boolean_selector",
       "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/boolean_selector-2.1.2",
       "packageUri": "lib/",
@@ -56,38 +38,14 @@
       "languageVersion": "3.4"
     },
     {
-      "name": "cli_config",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/cli_config-0.2.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
       "name": "clock",
       "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/clock-1.1.3",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
-      "name": "code_assets",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/code_assets-1.2.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.10"
-    },
-    {
       "name": "collection",
       "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/collection-1.19.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
-    },
-    {
-      "name": "convert",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/convert-3.1.2",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
-    },
-    {
-      "name": "coverage",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/coverage-1.15.1",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
@@ -108,12 +66,6 @@
       "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/dbus-0.7.15",
       "packageUri": "lib/",
       "languageVersion": "2.17"
-    },
-    {
-      "name": "diff_match_patch",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/diff_match_patch-0.4.1",
-      "packageUri": "lib/",
-      "languageVersion": "2.12"
     },
     {
       "name": "equatable",
@@ -224,12 +176,6 @@
       "languageVersion": "3.11"
     },
     {
-      "name": "frontend_server_client",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/frontend_server_client-4.0.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
       "name": "gal",
       "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/gal-2.3.3",
       "packageUri": "lib/",
@@ -308,34 +254,16 @@
       "languageVersion": "3.5"
     },
     {
-      "name": "glob",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/glob-2.2.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.3"
-    },
-    {
       "name": "gsettings",
       "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/gsettings-0.2.8",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
     {
-      "name": "hooks",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/hooks-2.0.2",
-      "packageUri": "lib/",
-      "languageVersion": "3.10"
-    },
-    {
       "name": "http",
       "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/http-1.6.0",
       "packageUri": "lib/",
       "languageVersion": "3.4"
-    },
-    {
-      "name": "http_multi_server",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/http_multi_server-3.2.2",
-      "packageUri": "lib/",
-      "languageVersion": "3.2"
     },
     {
       "name": "http_parser",
@@ -348,30 +276,6 @@
       "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/intl-0.20.3",
       "packageUri": "lib/",
       "languageVersion": "3.9"
-    },
-    {
-      "name": "io",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/io-1.1.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
-    },
-    {
-      "name": "jni",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/jni-1.0.3",
-      "packageUri": "lib/",
-      "languageVersion": "3.3"
-    },
-    {
-      "name": "jni_flutter",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/jni_flutter-1.0.2",
-      "packageUri": "lib/",
-      "languageVersion": "3.3"
-    },
-    {
-      "name": "jni_util",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/jni_util-1.0.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.3"
     },
     {
       "name": "leak_tracker",
@@ -398,12 +302,6 @@
       "languageVersion": "3.8"
     },
     {
-      "name": "logging",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/logging-1.3.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
-    },
-    {
       "name": "matcher",
       "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/matcher-0.12.20",
       "packageUri": "lib/",
@@ -422,40 +320,10 @@
       "languageVersion": "3.5"
     },
     {
-      "name": "mime",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/mime-2.1.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.2"
-    },
-    {
-      "name": "mocktail",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/mocktail-1.0.5",
-      "packageUri": "lib/",
-      "languageVersion": "2.12"
-    },
-    {
       "name": "nested",
       "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/nested-1.0.0",
       "packageUri": "lib/",
       "languageVersion": "2.12"
-    },
-    {
-      "name": "node_preamble",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/node_preamble-2.0.2",
-      "packageUri": "lib/",
-      "languageVersion": "2.12"
-    },
-    {
-      "name": "objective_c",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/objective_c-9.5.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.10"
-    },
-    {
-      "name": "package_config",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/package_config-2.2.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
     },
     {
       "name": "package_info_plus",
@@ -474,24 +342,6 @@
       "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/path-1.9.1",
       "packageUri": "lib/",
       "languageVersion": "3.4"
-    },
-    {
-      "name": "path_provider",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/path_provider-2.1.6",
-      "packageUri": "lib/",
-      "languageVersion": "3.10"
-    },
-    {
-      "name": "path_provider_android",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/path_provider_android-2.3.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.9"
-    },
-    {
-      "name": "path_provider_foundation",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/path_provider_foundation-2.6.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.10"
     },
     {
       "name": "path_provider_linux",
@@ -530,28 +380,10 @@
       "languageVersion": "3.0"
     },
     {
-      "name": "pool",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/pool-1.5.3",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
-    },
-    {
       "name": "provider",
       "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/provider-6.1.5+1",
       "packageUri": "lib/",
       "languageVersion": "2.12"
-    },
-    {
-      "name": "pub_semver",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/pub_semver-2.2.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
-    },
-    {
-      "name": "record_use",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/record_use-0.6.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.10"
     },
     {
       "name": "shared_preferences",
@@ -596,46 +428,10 @@
       "languageVersion": "3.3"
     },
     {
-      "name": "shelf",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/shelf-1.4.2",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
-    },
-    {
-      "name": "shelf_packages_handler",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/shelf_packages_handler-3.0.2",
-      "packageUri": "lib/",
-      "languageVersion": "2.17"
-    },
-    {
-      "name": "shelf_static",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/shelf_static-1.1.3",
-      "packageUri": "lib/",
-      "languageVersion": "3.3"
-    },
-    {
-      "name": "shelf_web_socket",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/shelf_web_socket-3.0.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
       "name": "sky_engine",
       "rootUri": "file:///Users/hieu/fvm/versions/3.47.2/bin/cache/pkg/sky_engine",
       "packageUri": "lib/",
       "languageVersion": "3.11"
-    },
-    {
-      "name": "source_map_stack_trace",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/source_map_stack_trace-2.1.2",
-      "packageUri": "lib/",
-      "languageVersion": "3.3"
-    },
-    {
-      "name": "source_maps",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/source_maps-0.10.14",
-      "packageUri": "lib/",
-      "languageVersion": "3.3"
     },
     {
       "name": "source_span",
@@ -668,20 +464,8 @@
       "languageVersion": "3.1"
     },
     {
-      "name": "test",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/test-1.31.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.10"
-    },
-    {
       "name": "test_api",
       "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/test_api-0.7.12",
-      "packageUri": "lib/",
-      "languageVersion": "3.10"
-    },
-    {
-      "name": "test_core",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/test_core-0.6.18",
       "packageUri": "lib/",
       "languageVersion": "3.10"
     },
@@ -722,34 +506,10 @@
       "languageVersion": "3.11"
     },
     {
-      "name": "watcher",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/watcher-1.2.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
-    },
-    {
       "name": "web",
       "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/web-1.1.1",
       "packageUri": "lib/",
       "languageVersion": "3.4"
-    },
-    {
-      "name": "web_socket",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/web_socket-1.0.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
-    },
-    {
-      "name": "web_socket_channel",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/web_socket_channel-3.0.3",
-      "packageUri": "lib/",
-      "languageVersion": "3.3"
-    },
-    {
-      "name": "webkit_inspection_protocol",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/webkit_inspection_protocol-1.2.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
     },
     {
       "name": "win32",
@@ -768,12 +528,6 @@
       "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/xml-7.0.1",
       "packageUri": "lib/",
       "languageVersion": "3.11"
-    },
-    {
-      "name": "yaml",
-      "rootUri": "file:///Users/hieu/.pub-cache/hosted/pub.dev/yaml-3.1.4",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
     },
     {
       "name": "phone_adas",
