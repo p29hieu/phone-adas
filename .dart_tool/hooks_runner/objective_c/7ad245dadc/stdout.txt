@@ -1,0 +1,54 @@
+Running `(cd /Users/hieu/.pub-cache/hosted/pub.dev/objective_c-9.5.0/; TMPDIR=/var/folders/21/rf9dzbvd5tldh4dq89zh_6qc0000gn/T/ PATH=/Users/hieu/fvm/versions/3.47.2/bin:/Users/hieu/Library/pnpm:/Users/hieu/.rbenv/shims:/Users/hieu/.nvm/versions/node/v20.18.0/bin:/Users/hieu/flutter/bin:/Users/hieu/.sdkman/candidates/java/current/bin:/Users/hieu/bin:/usr/local/bin:/opt/homebrew/bin:/Users/hieu/.local/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/usr/local/MacGPG2/bin:/Users/hieu/.cargo/bin:/Users/hieu/Library/Android/sdk/emulator:/Users/hieu/Library/Android/sdk/platform-tools:/Users/hieu/.nvm/versions/node/v16.17.0/bin:/Users/hieu/.nvm/versions/node/v16.18.1/bin:/Users/hieu/.nvm/versions/node/v16.2.0/bin:/Users/hieu/.nvm/versions/node/v16.20.2/bin:/Users/hieu/.nvm/versions/node/v18.12.0/bin:/Users/hieu/.nvm/versions/node/v18.12.1/bin:/Users/hieu/.nvm/versions/node/v18.14.1/bin:/Users/hieu/.nvm/versions/node/v18.16.0/bin:/Users/hieu/.nvm/versions/node/v18.17.0/bin:/Users/hieu/.nvm/versions/node/v18.17.1/bin:/Users/hieu/.nvm/versions/node/v18.18.0/bin:/Users/hieu/.nvm/versions/node/v18.18.2/bin:/Users/hieu/.nvm/versions/node/v18.19.0/bin:/Users/hieu/.nvm/versions/node/v18.2.0/bin:/Users/hieu/.nvm/versions/node/v20.0.0/bin:/Users/hieu/.nvm/versions/node/v20.15.1/bin:/Users/hieu/.nvm/versions/node/v20.19.0/bin:/Users/hieu/.nvm/versions/node/v20.19.5/bin:/Users/hieu/.nvm/versions/node/v20.19.6/bin:/Users/hieu/.nvm/versions/node/v22.10.0/bin:/Users/hieu/.nvm/versions/node/v22.11.0/bin:/Users/hieu/.nvm/versions/node/v22.12.0/bin:/Users/hieu/.nvm/versions/node/v22.22.3/bin:/Users/hieu/.nvm/versions/node/v22.23.1/bin:/Users/hieu/.nvm/versions/node/v22.23.2/bin:/Users/hieu/.nvm/versions/node/v24.14.0/bin:/Users/hieu/.claude/plugins/cache/addy-agent-skills/agent-skills/1.0.0/bin:/Users/hieu/.claude/plugins/cache/claude-plugins-official/claude-md-management/1.0.0/bin:/Users/hieu/.claude/plugins/cache/claude-plugins-official/code-review/0620a687ddd5/bin:/Users/hieu/.claude/plugins/cache/claude-plugins-official/code-simplifier/1.0.0/bin:/Users/hieu/.claude/plugins/cache/claude-plugins-official/postman/1.3.1/bin:/Users/hieu/.claude/plugins/cache/claude-plugins-official/security-guidance/2.0.7/bin:/Users/hieu/.claude/plugins/cache/everything-claude-code/everything-claude-code/1.10.0/bin:/Users/hieu/Library/Application Support/Claude/local-agent-mode-sessions/e4980db3-740f-44da-991f-1fcde779af5f/2f2ee8d8-ca91-4c8c-bbc6-9be56312bc0b/rpm/plugin_0155zZVATbJU3jHUmPP9NvMC/bin:/Users/hieu/Library/Application Support/Claude/local-agent-mode-sessions/e4980db3-740f-44da-991f-1fcde779af5f/2f2ee8d8-ca91-4c8c-bbc6-9be56312bc0b/rpm/plugin_01FTLa86dhbVJ3HB1LdHdhN7/bin:/Users/hieu/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/2f2ee8d8-ca91-4c8c-bbc6-9be56312bc0b/e4980db3-740f-44da-991f-1fcde779af5f/bin HOME=/Users/hieu /Users/hieu/fvm/versions/3.47.2/bin/cache/dart-sdk/bin/dart --packages=/Users/hieu/Documents/phone_adas/.dart_tool/package_config.json /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/objective_c/7ad245dadc/hook.dill --config=/Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/objective_c/7ad245dadc/input.json )`.
+INFO: 2026-08-29 17:31:28.423480: Using compiler /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang from BuildInput.cCompiler.cc.
+
+INFO: 2026-08-29 17:31:28.428472: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk -target arm64-apple-darwin -mmacos-version-min=13 -c /Users/hieu/.pub-cache/hosted/pub.dev/objective_c-9.5.0/src/include/dart_api_dl.c -fpic -gline-tables-only -I src -o /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/include/dart_api_dl.c.o
+
+INFO: 2026-08-29 17:31:28.430152: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk -target arm64-apple-darwin -mmacos-version-min=13 -c /Users/hieu/.pub-cache/hosted/pub.dev/objective_c-9.5.0/src/objective_c.c -fpic -gline-tables-only -I src -o /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/objective_c.c.o
+
+INFO: 2026-08-29 17:31:28.430360: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk -target arm64-apple-darwin -mmacos-version-min=13 -x objective-c -fobjc-arc -c /Users/hieu/.pub-cache/hosted/pub.dev/objective_c-9.5.0/src/input_stream_adapter.m -fpic -gline-tables-only -I src -o /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/input_stream_adapter.m.o
+
+INFO: 2026-08-29 17:31:28.430592: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk -target arm64-apple-darwin -mmacos-version-min=13 -x objective-c -fobjc-arc -c /Users/hieu/.pub-cache/hosted/pub.dev/objective_c-9.5.0/src/observer.m -fpic -gline-tables-only -I src -o /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/observer.m.o
+
+.m.o
+
+INFO: 2026-08-29 17:31:28.430696: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk -target arm64-apple-darwin -mmacos-version-min=13 -x objective-c -fobjc-arc -c /Users/hieu/.pub-cache/hosted/pub.dev/objective_c-9.5.0/src/ns_number.m -fpic -gline-tables-only -I src -o /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/ns_number.m.o
+
+INFO: 2026-08-29 17:31:28.430868: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk -target arm64-apple-darwin -mmacos-version-min=13 -x objective-c -fobjc-arc -c /Users/hieu/.pub-cache/hosted/pub.dev/objective_c-9.5.0/src/protocol.m -fpic -gline-tables-only -I src -o /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/protocol.m.o
+
+INFO: 2026-08-29 17:31:28.431094: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk -target arm64-apple-darwin -mmacos-version-min=13 -x objective-c -fobjc-arc -c /Users/hieu/.pub-cache/hosted/pub.dev/objective_c-9.5.0/src/objective_c_bindings_generated.m -fpic -gline-tables-only -I src -o /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/objective_c_bindings_generated.m.o
+
+INFO: 2026-08-29 17:31:28.686521: 
+INFO: 2026-08-29 17:31:28.686620: 
+INFO: 2026-08-29 17:31:28.686651: Generated /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/include/dart_api_dl.c.o
+
+INFO: 2026-08-29 17:31:28.686873: 
+INFO: 2026-08-29 17:31:28.686889: 
+INFO: 2026-08-29 17:31:28.686906: Generated /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/objective_c.c.o
+INFO: 2026-08-29 17:31:28.686976: 
+INFO: 2026-08-29 17:31:28.686986: 
+INFO: 2026-08-29 17:31:28.686997: Generated /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/observer.m.o
+
+INFO: 2026-08-29 17:31:28.688558: 
+INFO: 2026-08-29 17:31:28.688592: 
+INFO: 2026-08-29 17:31:28.688613: Generated /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/protocol.m.o
+
+INFO: 2026-08-29 17:31:29.054507: 
+INFO: 2026-08-29 17:31:29.054577: 
+INFO: 2026-08-29 17:31:29.054589: Generated /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/ns_number.m.o
+
+INFO: 2026-08-29 17:31:29.069778: 
+INFO: 2026-08-29 17:31:29.069792: 
+INFO: 2026-08-29 17:31:29.069805: Generated /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/objective_c.m.o
+
+ter.m.o
+
+INFO: 2026-08-29 17:31:29.110088: 
+INFO: 2026-08-29 17:31:29.110134: 
+INFO: 2026-08-29 17:31:29.110145: Generated /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/objective_c_bindings_generated.m.o
+
+INFO: 2026-08-29 17:31:29.110562: Running: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -shared -Wl,-encryptable -undefined dynamic_lookup -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk -target arm64-apple-darwin -mmacos-version-min=13 /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/include/dart_api_dl.c.o /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/objective_c.c.o /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/input_stream_adapter.m.o /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/objective_c.m.o /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/observer.m.o /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/ns_number.m.o /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/protocol.m.o /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/obj/src/objective_c_bindings_generated.m.o -o /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/objective_c.dylib
+
+INFO: 2026-08-29 17:31:29.273453: 
+INFO: 2026-08-29 17:31:29.273522: 
+INFO: 2026-08-29 17:31:29.273534: Generated /Users/hieu/Documents/phone_adas/.dart_tool/hooks_runner/shared/objective_c/build/7ad245dadc/objective_c.dylib
+

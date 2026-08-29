@@ -1,0 +1,73 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:phone_adas/domain/collision_warning.dart';
+
+void main() {
+  final t0 = DateTime.utc(2026, 1, 1, 0, 0, 0);
+  DateTime at(double seconds) =>
+      t0.add(Duration(milliseconds: (seconds * 1000).round()));
+
+  group('CollisionMonitor gap warning (hysteresis)', () {
+    test('fires only after sustained breach of 2 s', () {
+      final m = CollisionMonitor();
+      // 70 km/h -> legal gap 55 m. Hold distance at 40 m.
+      var alert = AdasAlert.none;
+      for (var i = 0; i <= 25; i++) {
+        alert = m.update(distanceM: 40, egoSpeedKmh: 70, ts: at(i * 0.1));
+      }
+      // 2.5 s elapsed, breach was continuous -> active.
+      expect(alert, AdasAlert.keepDistance);
+    });
+
+    test('does not fire on a brief cut-in shorter than 2 s', () {
+      final m = CollisionMonitor();
+      var alert = AdasAlert.none;
+      for (var i = 0; i <= 10; i++) {
+        alert = m.update(distanceM: 40, egoSpeedKmh: 70, ts: at(i * 0.1));
+      }
+      expect(alert, AdasAlert.none); // only 1.0 s so far
+      alert = m.update(distanceM: 60, egoSpeedKmh: 70, ts: at(1.2));
+      expect(alert, AdasAlert.none); // breach ended, timer reset
+    });
+
+    test('releases only above gap * 1.1', () {
+      final m = CollisionMonitor();
+      var alert = AdasAlert.none;
+      for (var i = 0; i <= 25; i++) {
+        alert = m.update(distanceM: 40, egoSpeedKmh: 70, ts: at(i * 0.1));
+      }
+      expect(alert, AdasAlert.keepDistance);
+      // 56 m is above 55 but below 60.5 -> still active (hysteresis).
+      alert = m.update(distanceM: 56, egoSpeedKmh: 70, ts: at(2.6));
+      expect(alert, AdasAlert.keepDistance);
+      alert = m.update(distanceM: 62, egoSpeedKmh: 70, ts: at(2.7));
+      expect(alert, AdasAlert.none);
+    });
+  });
+
+  group('CollisionMonitor TTC', () {
+    test('closing fast triggers collision immediately, no 2 s delay', () {
+      final m = CollisionMonitor();
+      // Approach at 10 m/s: 40 m -> 30 m over 1 s, TTC ~= 3 s then shrinking.
+      var alert = AdasAlert.none;
+      var d = 40.0;
+      for (var i = 0; i <= 25 && d > 5; i++) {
+        alert = m.update(distanceM: d, egoSpeedKmh: 50, ts: at(i * 0.1));
+        d -= 1.0; // 10 m/s closing
+        if (alert != AdasAlert.none) break;
+      }
+      expect(
+        alert == AdasAlert.collision || alert == AdasAlert.collisionCritical,
+        isTrue,
+      );
+    });
+
+    test('steady following produces no TTC alert', () {
+      final m = CollisionMonitor();
+      var alert = AdasAlert.none;
+      for (var i = 0; i <= 30; i++) {
+        alert = m.update(distanceM: 60, egoSpeedKmh: 70, ts: at(i * 0.1));
+      }
+      expect(alert, AdasAlert.none);
+    });
+  });
+}
