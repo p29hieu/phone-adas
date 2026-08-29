@@ -265,6 +265,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Coming soon'**
   String get comingSoon;
+
+  /// No description provided for @hudCameraPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Live camera arrives in phase 2 — mock data for now'**
+  String get hudCameraPlaceholder;
 }
 
 class _AppLocalizationsDelegate

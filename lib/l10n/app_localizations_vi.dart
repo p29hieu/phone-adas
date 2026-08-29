@@ -95,4 +95,8 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get comingSoon => 'Sắp có';
+
+  @override
+  String get hudCameraPlaceholder =>
+      'Camera thật sẽ có ở giai đoạn 2 — đang chạy dữ liệu giả lập';
 }

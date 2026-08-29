@@ -96,4 +96,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get comingSoon => 'Coming soon';
+
+  @override
+  String get hudCameraPlaceholder =>
+      'Live camera arrives in phase 2 — mock data for now';
 }

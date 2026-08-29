@@ -174,6 +174,26 @@ class _HudScreenState extends State<HudScreen> {
                     ),
                   ),
                 ),
+                Align(
+                  alignment: const Alignment(0, 0.55),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.videocam_off_outlined,
+                          size: 40, color: Colors.white24),
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 40),
+                        child: Text(
+                          l10n.hudCameraPlaceholder,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              color: Colors.white38, fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 BBoxOverlay(
                   frameSize:
                       Size(state.frameW.toDouble(), state.frameH.toDouble()),
@@ -187,25 +207,24 @@ class _HudScreenState extends State<HudScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          crossAxisAlignment: WrapCrossAlignment.start,
                           children: [
                             _InfoCard(state: state, l10n: l10n, time: _time),
-                            const Spacer(),
                             if (state.mock)
                               StatusBadge(
                                 l10n.mockModeBadge,
                                 background: Colors.orange.shade800,
                               ),
-                            if (state.weather != null) ...[
-                              const SizedBox(width: 8),
+                            if (state.weather != null)
                               _WeatherChip(
                                 icon: _weatherIcon(state.weather!.kind),
                                 label:
                                     '${state.weather!.tempC.round()}°C'
                                     '${state.weather!.isStale ? ' *' : ''}',
                               ),
-                            ],
                           ],
                         ),
                         const Spacer(),

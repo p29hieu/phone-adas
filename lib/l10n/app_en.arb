@@ -34,5 +34,6 @@
   "toolbarPhoto": "Photo",
   "toolbarSettings": "Settings",
   "toolbarHistory": "History",
-  "comingSoon": "Coming soon"
+  "comingSoon": "Coming soon",
+  "hudCameraPlaceholder": "Live camera arrives in phase 2 — mock data for now"
 }
