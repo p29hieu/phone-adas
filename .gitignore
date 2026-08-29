@@ -41,3 +41,8 @@ app.*.map.json
 
 # FVM SDK cache (keep .fvmrc committed)
 .fvm/
+
+# Model export toolchain (artifacts are compiled into ios/Runner/Models/)
+tools/.venv-export/
+tools/*.pt
+tools/*.mlpackage

@@ -6,10 +6,10 @@ camera + on-device AI, warns on tailgating / forward collision / lead
 departure at red lights, and shows GPS speed, coordinates, area name and
 local weather.
 
-**Status — Phase 0**: full Flutter app wired to a *mock* native detection
-pipeline (10 Hz, both platforms). The real vision cores (iOS: AVCapture +
-Vision + Core ML on ANE; Android: CameraX + LiteRT) are the next phase and
-replace only the native side of the channel contract below.
+**Status — Phase 2 (iOS vision core)**: live camera preview + YOLO11n on
+the Neural Engine with per-frame camera intrinsics feeding the distance
+math. Android still runs the mock emitter (phase 3). GPS self-calibration
+of per-class vehicle widths is the remaining phase-2 item.
 
 - Bundle ID: `app.mikosea.test` (placeholder, will change)
 - iOS-first (tested on iPhone XS / 12 Pro), Android buildable throughout.
@@ -95,12 +95,31 @@ lib/
 external-UVC source):
 
 - `EventChannel app.mikosea.test/detections` → ~10 Hz maps:
-  `{ts, mock, frameW, frameH, detections: [{cls, conf, x, y, w, h}]}`
-  (bbox in full-resolution frame pixels; `cls` ∈ car|truck|bus|motorcycle)
-- `MethodChannel app.mikosea.test/control` → `start` / `stop`
+  `{ts, mock, frameW, frameH, fx?, detections: [{cls, conf, x, y, w, h}]}`
+  (bbox in full-resolution frame pixels; `cls` ∈ car|truck|bus|motorcycle;
+  `fx` = per-frame focal length in pixels from camera intrinsics when the
+  platform provides it)
+- `MethodChannel app.mikosea.test/control` → `start` returns
+  `{textureId: int?}` (live-preview Flutter texture; null on the simulator /
+  Android stub / permission denied) / `stop`
 
-Native cores: `ios/Runner/AdasCore.swift`,
-`android/.../AdasCore.kt` — currently mock emitters.
+Native cores: `ios/Runner/AdasCore.swift` — real vision pipeline
+(AVCapture 1080p → Flutter texture + intrinsics → Vision ROI → YOLO11n on
+the Neural Engine; falls back to the mock emitter on the simulator or when
+the model is missing). `android/.../AdasCore.kt` — mock emitter (phase 3).
+
+### iOS model
+
+Build the Core ML model once per checkout (not committed until stable):
+
+```bash
+./tools/export_model.sh   # needs python3.12; ~5 min first run
+```
+
+This produces `ios/Runner/Models/yolo11n.mlmodelc` (bundled as a folder
+resource). Without it the app still runs — live preview + mock detections.
+YOLO11 weights are AGPL-3.0: fine for personal use, re-check before any
+public distribution.
 
 ## Testing
 

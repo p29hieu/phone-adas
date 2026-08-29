@@ -43,7 +43,10 @@ class HudCubit extends Cubit<HudState> {
   static const _geocodeMinMoveMeters = 1000.0;
 
   Future<void> start() async {
-    await AdasChannel.start();
+    final textureId = await AdasChannel.start();
+    if (textureId != null) {
+      emit(state.copyWith(textureId: textureId));
+    }
     _frameSub = AdasChannel.frames.listen(_onFrame);
     await _initLocation();
     _weatherTimer = Timer.periodic(_weatherRefresh, (_) => _refreshWeather());
@@ -70,6 +73,10 @@ class HudCubit extends Cubit<HudState> {
   }
 
   void _onFrame(AdasFrame frame) {
+    // Per-frame focal length from camera intrinsics beats any FOV guess.
+    if (frame.fx != null && frame.fx! > 0) {
+      _estimator.fPx = frame.fx!;
+    }
     final lead = _estimator.pickLead(frame);
     final distance = lead == null ? null : _estimator.estimate(lead);
 

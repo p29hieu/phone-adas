@@ -22,8 +22,12 @@ gaps) with on-device AI. iOS-first, Android kept buildable.
   then run `fvm flutter gen-l10n`.
 - Firebase is optional at runtime: never call Firebase APIs without the
   `Firebase.apps.isNotEmpty` guard (see `crashlyticsLog`).
-- Native channel contract is frozen (see README). Changing it means
-  updating BOTH native cores + `AdasChannel` + this note.
+- Native channel contract is frozen (see README; includes optional `fx`
+  per frame and `start -> {textureId}`). Changing it means updating BOTH
+  native cores + `AdasChannel` + this note.
+- iOS model: `./tools/export_model.sh` produces
+  `ios/Runner/Models/yolo11n.mlmodelc`; the core falls back to mock
+  detections when it is absent, so the build never depends on it.
 - Planned external range sources (factory ACC radar via CAN/OBD) enter at
   the DART layer, not the platform channel: they feed
   `CollisionMonitor.update(measuredClosingMps: ...)` and lead distance

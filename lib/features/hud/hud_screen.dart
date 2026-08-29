@@ -164,17 +164,32 @@ class _HudScreenState extends State<HudScreen> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // Camera preview lands here as a native texture in phase 2.
-                const DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Color(0xFF20242B), Color(0xFF0D0F12)],
+                // Live camera preview (iOS phase-2 core); cover-fit matches
+                // the BBoxOverlay coordinate mapping exactly.
+                if (state.textureId != null)
+                  SizedBox.expand(
+                    child: FittedBox(
+                      fit: BoxFit.cover,
+                      clipBehavior: Clip.hardEdge,
+                      child: SizedBox(
+                        width: state.frameW.toDouble(),
+                        height: state.frameH.toDouble(),
+                        child: Texture(textureId: state.textureId!),
+                      ),
+                    ),
+                  )
+                else
+                  const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0xFF20242B), Color(0xFF0D0F12)],
+                      ),
                     ),
                   ),
-                ),
-                Align(
+                if (state.textureId == null)
+                  Align(
                   alignment: const Alignment(0, 0.55),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,

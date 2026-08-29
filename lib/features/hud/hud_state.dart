@@ -32,6 +32,7 @@ class TrackedVehicle extends Equatable {
 class HudState extends Equatable {
   const HudState({
     this.status = HudStatus.initializing,
+    this.textureId,
     this.mock = false,
     this.leadDistanceM,
     this.vehicles = const [],
@@ -49,6 +50,9 @@ class HudState extends Equatable {
   });
 
   final HudStatus status;
+
+  /// Flutter texture id of the live camera preview (null = no preview).
+  final int? textureId;
 
   /// True while the native core emits synthetic detections (no ML model yet).
   final bool mock;
@@ -74,6 +78,7 @@ class HudState extends Equatable {
 
   HudState copyWith({
     HudStatus? status,
+    int? textureId,
     bool? mock,
     Object? leadDistanceM = _unset,
     List<TrackedVehicle>? vehicles,
@@ -91,6 +96,7 @@ class HudState extends Equatable {
   }) =>
       HudState(
         status: status ?? this.status,
+        textureId: textureId ?? this.textureId,
         mock: mock ?? this.mock,
         leadDistanceM: identical(leadDistanceM, _unset)
             ? this.leadDistanceM
@@ -112,6 +118,7 @@ class HudState extends Equatable {
   @override
   List<Object?> get props => [
         status,
+        textureId,
         mock,
         leadDistanceM,
         vehicles,

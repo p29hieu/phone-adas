@@ -35,6 +35,7 @@ class AdasFrame {
     required this.mock,
     required this.frameW,
     required this.frameH,
+    this.fx,
     required this.detections,
   });
 
@@ -43,6 +44,10 @@ class AdasFrame {
   /// True while the native core has no ML model and emits synthetic data.
   final bool mock;
   final int frameW, frameH;
+
+  /// Camera focal length in pixels for this frame (from iOS camera
+  /// intrinsics). Null when the platform does not deliver intrinsics.
+  final double? fx;
   final List<Detection> detections;
 
   factory AdasFrame.fromMap(Map<dynamic, dynamic> m) => AdasFrame(
@@ -50,6 +55,7 @@ class AdasFrame {
         mock: m['mock'] as bool? ?? false,
         frameW: (m['frameW'] as num).toInt(),
         frameH: (m['frameH'] as num).toInt(),
+        fx: (m['fx'] as num?)?.toDouble(),
         detections: (m['detections'] as List<dynamic>? ?? const [])
             .map((e) => Detection.fromMap(e as Map<dynamic, dynamic>))
             .toList(growable: false),

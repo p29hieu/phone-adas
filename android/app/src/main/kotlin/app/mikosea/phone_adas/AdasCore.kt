@@ -52,7 +52,7 @@ object AdasCore {
         MethodChannel(engine.dartExecutor.binaryMessenger, CONTROL_CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
-                    "start" -> { start(); result.success(null) }
+                    "start" -> { start(); result.success(mapOf("textureId" to null)) }
                     "stop" -> { stop(); result.success(null) }
                     else -> result.notImplemented()
                 }
@@ -88,6 +88,7 @@ object AdasCore {
                 "mock" to true,
                 "frameW" to 1920,
                 "frameH" to 1080,
+                "fx" to 1500.0,
                 "detections" to listOf(
                     box("motorcycle", 620.0, 760.0, 0.8 * 1500.0 / dMoto, 1.6, 0.88),
                     box("car", 960.0, 620.0, 1.8 * 1500.0 / dCenter, 0.8, 0.93),

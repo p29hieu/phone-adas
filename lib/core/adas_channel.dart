@@ -24,6 +24,13 @@ class AdasChannel {
       .map((e) => AdasFrame.fromMap(e as Map<dynamic, dynamic>))
       .asBroadcastStream();
 
-  static Future<void> start() => _control.invokeMethod('start');
+  /// Starts the native core. Returns the Flutter texture id of the live
+  /// camera preview, or null when no preview is available (simulator,
+  /// permission denied, Android stub).
+  static Future<int?> start() async {
+    final res = await _control.invokeMethod<dynamic>('start');
+    if (res is Map) return (res['textureId'] as num?)?.toInt();
+    return null;
+  }
   static Future<void> stop() => _control.invokeMethod('stop');
 }
