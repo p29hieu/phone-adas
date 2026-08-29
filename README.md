@@ -28,6 +28,13 @@ Rules:
 - Upgrading Flutter = edit `.fvmrc` + run `fvm install` + commit the diff of
   `.fvmrc` and `pubspec.lock` in one PR.
 
+## Supported devices
+
+| Platform | Minimum | Reason |
+|---|---|---|
+| iOS | **iOS 15.0** + **A12 Bionic** (iPhone XS/XR, 2018+) | iOS 15 is required by Firebase iOS SDK 12 / Flutter 3.47; A12 is the first chip whose Neural Engine is available to Core ML — the phase-2 vision core targets the ANE. A11 and older would fall back to GPU (3-4x slower, hotter) and are not supported. |
+| Android | **Android 8.0 (API 26)**, Adreno 640-class GPU or better recommended | Below API 26 CameraX is unreliable and hardware cannot sustain 10 fps inference. NPU acceleration (optional) needs Hexagon v68+ (Snapdragon 888 / 7+ Gen 2 and newer) or Google Tensor; otherwise the LiteRT GPU delegate is used. |
+
 ## Setup on a new machine (macOS)
 
 ```bash
