@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'safe_distance.dart';
 
 enum AdasAlert { none, keepDistance, collision, collisionCritical }
@@ -15,6 +17,7 @@ class CollisionMonitor {
     this.ttcWarnSeconds = 2.5,
     this.ttcCriticalSeconds = 1.2,
     this.releaseFactor = 1.1,
+    this.minFcwSpeedKmh = 10,
   });
 
   final Duration gapEnterDelay;
@@ -22,9 +25,15 @@ class CollisionMonitor {
   final double ttcCriticalSeconds;
   final double releaseFactor;
 
+  /// Below this ego speed camera-based TTC alerts are suppressed: parking
+  /// and stop-and-go creeping otherwise fire constantly. Radar-measured
+  /// closing speed is exempt.
+  final double minFcwSpeedKmh;
+
   double? _lastDistance;
   DateTime? _lastTs;
   double _closingMps = 0; // EMA of closing speed, + means approaching
+  int _ttcStreak = 0;
   DateTime? _gapBreachSince;
   bool _gapActive = false;
 
@@ -44,9 +53,12 @@ class CollisionMonitor {
     double? measuredClosingMps,
   }) {
     if (distanceM == null) {
-      // Lead lost: keep gap state armed briefly is not needed for v1.
+      // Lead lost: a stale closing speed must never survive into the next
+      // target, so the EMA resets too.
       _lastDistance = null;
       _lastTs = null;
+      _closingMps = 0;
+      _ttcStreak = 0;
       _gapBreachSince = null;
       _gapActive = false;
       return AdasAlert.none;
@@ -57,17 +69,40 @@ class CollisionMonitor {
     } else if (_lastDistance != null && _lastTs != null) {
       final dt = ts.difference(_lastTs!).inMicroseconds / 1e6;
       if (dt > 0 && dt < 2) {
-        final v = (_lastDistance! - distanceM) / dt;
-        _closingMps = _closingMps * _emaKeep + v * (1 - _emaKeep);
+        final jump = (distanceM - _lastDistance!).abs();
+        if (jump > math.max(3.0, _lastDistance! * 0.25)) {
+          // Implausible single-step change: the lead pick switched to a
+          // different vehicle (e.g. a cut-in). Restart the closing estimate
+          // instead of reading the jump as motion.
+          _closingMps = 0;
+          _ttcStreak = 0;
+        } else {
+          final v = (_lastDistance! - distanceM) / dt;
+          _closingMps = _closingMps * _emaKeep + v * (1 - _emaKeep);
+        }
       }
     }
     _lastDistance = distanceM;
     _lastTs = ts;
 
-    if (_closingMps > _minClosingMps) {
+    final fcwAllowed =
+        measuredClosingMps != null || egoSpeedKmh >= minFcwSpeedKmh;
+    if (fcwAllowed && _closingMps > _minClosingMps) {
       final ttc = distanceM / _closingMps;
-      if (ttc < ttcCriticalSeconds) return AdasAlert.collisionCritical;
-      if (ttc < ttcWarnSeconds) return AdasAlert.collision;
+      if (ttc < ttcWarnSeconds) {
+        _ttcStreak++;
+        // Radar readings are trusted immediately; camera-derived TTC needs
+        // two consecutive qualifying frames to kill single-frame spikes.
+        if (measuredClosingMps != null || _ttcStreak >= 2) {
+          return ttc < ttcCriticalSeconds
+              ? AdasAlert.collisionCritical
+              : AdasAlert.collision;
+        }
+      } else {
+        _ttcStreak = 0;
+      }
+    } else {
+      _ttcStreak = 0;
     }
 
     final gap = SafeDistance.legalMinimumMeters(egoSpeedKmh);

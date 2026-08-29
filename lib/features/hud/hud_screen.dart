@@ -9,12 +9,14 @@ import 'package:gal/gal.dart';
 
 import '../../cookbook/bbox_overlay.dart';
 import '../../cookbook/hud_numeral.dart';
+import '../../cookbook/pulsing_border.dart';
 import '../../cookbook/status_badge.dart';
 import '../../domain/collision_warning.dart';
 import '../../domain/distance_format.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/weather_service.dart';
 import '../calibration/calibration_screen.dart';
+import '../../core/adas_channel.dart';
 import 'lane_overlay.dart';
 import '../settings/settings_cubit.dart';
 import 'hud_cubit.dart';
@@ -35,6 +37,13 @@ class _HudScreenState extends State<HudScreen> {
   final FlutterTts _tts = FlutterTts();
   late final Timer _clock;
   String _time = '';
+
+  // Event bookkeeping so each alert announces only its OWN transitions.
+  int _seenDepartures = 0;
+  int _seenLaneEvents = 0;
+  AdasAlert _seenAlert = AdasAlert.none;
+  final Map<AlertKind, DateTime> _lastSoundAt = {};
+  static const _soundCooldown = Duration(seconds: 4);
 
   @override
   void initState() {
@@ -60,6 +69,25 @@ class _HudScreenState extends State<HudScreen> {
     final locale = Localizations.localeOf(context);
     await _tts.setLanguage(locale.languageCode == 'vi' ? 'vi-VN' : 'en-US');
     await _tts.speak(text);
+  }
+
+  /// Announces one alert kind per its configured sound, rate-limited so a
+  /// persisting condition cannot machine-gun the speaker.
+  Future<void> _notify(AlertKind kind, String phrase) async {
+    final sound = context.read<SettingsCubit>().state.soundFor(kind);
+    if (sound == AlertSound.off) return;
+    final now = DateTime.now();
+    final last = _lastSoundAt[kind];
+    if (last != null && now.difference(last) < _soundCooldown) return;
+    _lastSoundAt[kind] = now;
+    switch (sound) {
+      case AlertSound.voice:
+        await _speak(phrase);
+      case AlertSound.beep:
+        await AdasChannel.beep();
+      case AlertSound.off:
+        break;
+    }
   }
 
   Future<void> _takeScreenshot(AppLocalizations l10n) async {
@@ -165,21 +193,27 @@ class _HudScreenState extends State<HudScreen> {
             prev.departureCount != next.departureCount ||
             prev.laneEventCount != next.laneEventCount,
         listener: (context, state) {
-          if (state.departureCount > 0) {
-            _speak(l10n.warnLeadDeparted);
+          if (state.departureCount > _seenDepartures) {
+            _seenDepartures = state.departureCount;
+            _notify(AlertKind.departure, l10n.warnLeadDeparted);
           }
-          if (state.laneEventCount > 0 &&
-              context.read<SettingsCubit>().state.testMode) {
-            _speak(l10n.warnLaneDeparture);
+          if (state.laneEventCount > _seenLaneEvents) {
+            _seenLaneEvents = state.laneEventCount;
+            if (context.read<SettingsCubit>().state.testMode) {
+              _notify(AlertKind.lane, l10n.warnLaneDeparture);
+            }
           }
-          switch (state.alert) {
-            case AdasAlert.collision:
-            case AdasAlert.collisionCritical:
-              _speak(l10n.warnCollision);
-            case AdasAlert.keepDistance:
-              _speak(l10n.warnKeepDistance);
-            case AdasAlert.none:
-              break;
+          if (state.alert != _seenAlert) {
+            _seenAlert = state.alert;
+            switch (state.alert) {
+              case AdasAlert.collision:
+              case AdasAlert.collisionCritical:
+                _notify(AlertKind.collision, l10n.warnCollision);
+              case AdasAlert.keepDistance:
+                _notify(AlertKind.gap, l10n.warnKeepDistance);
+              case AdasAlert.none:
+                break;
+            }
           }
         },
         builder: (context, state) {
@@ -248,6 +282,12 @@ class _HudScreenState extends State<HudScreen> {
                     for (final v in state.vehicles) _bubbleFor(v, state),
                   ],
                 ),
+                PulsingBorder(
+                  active: state.alert == AdasAlert.collision ||
+                      state.alert == AdasAlert.collisionCritical,
+                  color: const Color(0xFFE53935),
+                  period: const Duration(seconds: 2),
+                ),
                 SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.all(12),
@@ -273,16 +313,13 @@ class _HudScreenState extends State<HudScreen> {
                                     '${state.weather!.isStale ? ' *' : ''}',
                               ),
                             if (context.watch<SettingsCubit>().state.devMode)
-                              StatusBadge(
-                                l10n.devCounts(
-                                  state.vehicles
-                                      .where((v) => v.cls != 'motorcycle')
-                                      .length,
-                                  state.vehicles
-                                      .where((v) => v.cls == 'motorcycle')
-                                      .length,
-                                ),
-                                background: const Color(0xCC1565C0),
+                              _DevCountsChip(
+                                cars: state.vehicles
+                                    .where((v) => v.cls != 'motorcycle')
+                                    .length,
+                                motos: state.vehicles
+                                    .where((v) => v.cls == 'motorcycle')
+                                    .length,
                               ),
                           ],
                         ),
@@ -536,6 +573,91 @@ class _ToolbarButton extends StatelessWidget {
   }
 }
 
+class _DevCountsChip extends StatelessWidget {
+  const _DevCountsChip({required this.cars, required this.motos});
+
+  final int cars;
+  final int motos;
+
+  @override
+  Widget build(BuildContext context) {
+    const style = TextStyle(
+      color: Colors.white,
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+    );
+    Widget row(IconData icon, int count) => Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: Colors.white),
+            const SizedBox(width: 5),
+            Text('$count', style: style),
+          ],
+        );
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: const Color(0xCC1565C0),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          row(Icons.directions_car, cars),
+          const SizedBox(height: 3),
+          row(Icons.two_wheeler, motos),
+        ],
+      ),
+    );
+  }
+}
+
+class _AlertSoundRow extends StatelessWidget {
+  const _AlertSoundRow({required this.kind, required this.label});
+
+  final AlertKind kind;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final settings = context.watch<SettingsCubit>().state;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label),
+          const SizedBox(height: 4),
+          SegmentedButton<AlertSound>(
+            segments: [
+              ButtonSegment(
+                value: AlertSound.voice,
+                icon: const Icon(Icons.record_voice_over, size: 16),
+                label: Text(l10n.soundVoice),
+              ),
+              ButtonSegment(
+                value: AlertSound.beep,
+                icon: const Icon(Icons.notifications_active, size: 16),
+                label: Text(l10n.soundBeep),
+              ),
+              ButtonSegment(
+                value: AlertSound.off,
+                icon: const Icon(Icons.notifications_off, size: 16),
+                label: Text(l10n.soundOff),
+              ),
+            ],
+            selected: {settings.soundFor(kind)},
+            onSelectionChanged: (sel) =>
+                context.read<SettingsCubit>().setAlertSound(kind, sel.first),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SettingsSheet extends StatelessWidget {
   const _SettingsSheet({required this.onCalibrate});
 
@@ -559,6 +681,17 @@ class _SettingsSheet extends StatelessWidget {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: onCalibrate,
               ),
+              const Divider(),
+              Text(l10n.settingsAlertSounds,
+                  style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              _AlertSoundRow(
+                  kind: AlertKind.departure,
+                  label: l10n.alertTypeDeparture),
+              _AlertSoundRow(
+                  kind: AlertKind.collision, label: l10n.alertTypeCollision),
+              _AlertSoundRow(kind: AlertKind.lane, label: l10n.alertTypeLane),
+              _AlertSoundRow(kind: AlertKind.gap, label: l10n.alertTypeGap),
               const Divider(),
               Text(l10n.settingsSensitivity,
                   style: Theme.of(context).textTheme.titleMedium),

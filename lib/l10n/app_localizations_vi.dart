@@ -173,7 +173,26 @@ class AppLocalizationsVi extends AppLocalizations {
   String get warnLaneDeparture => 'Xe lệch làn';
 
   @override
-  String devCounts(int cars, int motos) {
-    return 'Ô tô $cars · Xe máy $motos';
-  }
+  String get settingsAlertSounds => 'Âm thanh cảnh báo';
+
+  @override
+  String get alertTypeDeparture => 'Phương tiện phía trước di chuyển';
+
+  @override
+  String get alertTypeCollision => 'Va chạm';
+
+  @override
+  String get alertTypeLane => 'Lệch làn';
+
+  @override
+  String get alertTypeGap => 'Giữ khoảng cách tối thiểu';
+
+  @override
+  String get soundVoice => 'Nói';
+
+  @override
+  String get soundBeep => 'Bíp';
+
+  @override
+  String get soundOff => 'Tắt';
 }

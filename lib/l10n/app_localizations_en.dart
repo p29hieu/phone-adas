@@ -176,7 +176,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get warnLaneDeparture => 'Lane departure';
 
   @override
-  String devCounts(int cars, int motos) {
-    return 'Cars $cars · Motorbikes $motos';
-  }
+  String get settingsAlertSounds => 'Alert sounds';
+
+  @override
+  String get alertTypeDeparture => 'Lead vehicle moves off';
+
+  @override
+  String get alertTypeCollision => 'Collision';
+
+  @override
+  String get alertTypeLane => 'Lane departure';
+
+  @override
+  String get alertTypeGap => 'Minimum following gap';
+
+  @override
+  String get soundVoice => 'Voice';
+
+  @override
+  String get soundBeep => 'Beep';
+
+  @override
+  String get soundOff => 'Off';
 }

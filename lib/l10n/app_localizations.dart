@@ -398,11 +398,53 @@ abstract class AppLocalizations {
   /// **'Lane departure'**
   String get warnLaneDeparture;
 
-  /// No description provided for @devCounts.
+  /// No description provided for @settingsAlertSounds.
   ///
   /// In en, this message translates to:
-  /// **'Cars {cars} · Motorbikes {motos}'**
-  String devCounts(int cars, int motos);
+  /// **'Alert sounds'**
+  String get settingsAlertSounds;
+
+  /// No description provided for @alertTypeDeparture.
+  ///
+  /// In en, this message translates to:
+  /// **'Lead vehicle moves off'**
+  String get alertTypeDeparture;
+
+  /// No description provided for @alertTypeCollision.
+  ///
+  /// In en, this message translates to:
+  /// **'Collision'**
+  String get alertTypeCollision;
+
+  /// No description provided for @alertTypeLane.
+  ///
+  /// In en, this message translates to:
+  /// **'Lane departure'**
+  String get alertTypeLane;
+
+  /// No description provided for @alertTypeGap.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum following gap'**
+  String get alertTypeGap;
+
+  /// No description provided for @soundVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get soundVoice;
+
+  /// No description provided for @soundBeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Beep'**
+  String get soundBeep;
+
+  /// No description provided for @soundOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get soundOff;
 }
 
 class _AppLocalizationsDelegate

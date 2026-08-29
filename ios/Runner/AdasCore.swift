@@ -1,3 +1,4 @@
+import AudioToolbox
 import AVFoundation
 import CoreML
 import Flutter
@@ -103,6 +104,9 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
       result(["textureId": cameraAvailable ? textureId : nil])
     case "stop":
       stop()
+      result(nil)
+    case "beep":
+      AudioServicesPlaySystemSound(1052)
       result(nil)
     default:
       result(FlutterMethodNotImplemented)
@@ -213,18 +217,14 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     applyOrientation()
   }
 
-  /// Rotates delivered buffers upright for the current device orientation,
-  /// so preview, detections and the Flutter overlay share one frame space.
+  /// Rotates delivered buffers upright for the current INTERFACE
+  /// orientation, so preview, detections and the Flutter overlay share one
+  /// frame space. The interface (not device) orientation is authoritative:
+  /// under rotation lock or at cold start the device orientation is
+  /// .unknown/.faceUp while the UI is firmly portrait.
   private func applyOrientation() {
     guard cameraConfigured, let connection = videoOutput.connection(with: .video) else { return }
-    let angle: CGFloat
-    switch UIDevice.current.orientation {
-    case .landscapeLeft: angle = 0
-    case .landscapeRight: angle = 180
-    case .portraitUpsideDown: angle = 270
-    case .portrait: angle = 90
-    default: return // faceUp/faceDown/unknown: keep the last angle
-    }
+    let angle = Self.rotationAngleForCurrentInterface()
     if #available(iOS 17.0, *) {
       if connection.isVideoRotationAngleSupported(angle) {
         connection.videoRotationAngle = angle
@@ -236,6 +236,19 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
       case 270: connection.videoOrientation = .portraitUpsideDown
       default: connection.videoOrientation = .portrait
       }
+    }
+  }
+
+  /// Must be called on the main thread.
+  private static func rotationAngleForCurrentInterface() -> CGFloat {
+    let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+    let orientation = (scenes.first { $0.activationState == .foregroundActive } ?? scenes.first)?
+      .interfaceOrientation ?? .portrait
+    switch orientation {
+    case .landscapeRight: return 0
+    case .landscapeLeft: return 180
+    case .portraitUpsideDown: return 270
+    default: return 90
     }
   }
 

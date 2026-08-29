@@ -88,15 +88,12 @@
   "settingsTestMode": "Test mode — lane detection (experimental)",
   "settingsDevMode": "Developer mode",
   "warnLaneDeparture": "Lane departure",
-  "devCounts": "Cars {cars} · Motorbikes {motos}",
-  "@devCounts": {
-    "placeholders": {
-      "cars": {
-        "type": "int"
-      },
-      "motos": {
-        "type": "int"
-      }
-    }
-  }
+  "settingsAlertSounds": "Alert sounds",
+  "alertTypeDeparture": "Lead vehicle moves off",
+  "alertTypeCollision": "Collision",
+  "alertTypeLane": "Lane departure",
+  "alertTypeGap": "Minimum following gap",
+  "soundVoice": "Voice",
+  "soundBeep": "Beep",
+  "soundOff": "Off"
 }

@@ -50,5 +50,12 @@
   "settingsTestMode": "Chế độ thử nghiệm — nhận diện làn đường",
   "settingsDevMode": "Chế độ nhà phát triển",
   "warnLaneDeparture": "Xe lệch làn",
-  "devCounts": "Ô tô {cars} · Xe máy {motos}"
+  "settingsAlertSounds": "Âm thanh cảnh báo",
+  "alertTypeDeparture": "Phương tiện phía trước di chuyển",
+  "alertTypeCollision": "Va chạm",
+  "alertTypeLane": "Lệch làn",
+  "alertTypeGap": "Giữ khoảng cách tối thiểu",
+  "soundVoice": "Nói",
+  "soundBeep": "Bíp",
+  "soundOff": "Tắt"
 }

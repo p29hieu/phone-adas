@@ -1,5 +1,7 @@
 package app.mikosea.phone_adas
 
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.os.Handler
 import android.os.Looper
 import io.flutter.embedding.engine.FlutterEngine
@@ -24,6 +26,9 @@ object AdasCore {
     private const val TICK_MS = 100L
 
     private val handler = Handler(Looper.getMainLooper())
+    private val toneGenerator by lazy {
+        ToneGenerator(AudioManager.STREAM_NOTIFICATION, 85)
+    }
     private var sink: EventChannel.EventSink? = null
     private var running = false
     private var phase = 0.0
@@ -54,6 +59,10 @@ object AdasCore {
                 when (call.method) {
                     "start" -> { start(); result.success(mapOf("textureId" to null)) }
                     "stop" -> { stop(); result.success(null) }
+                    "beep" -> {
+                        toneGenerator.startTone(ToneGenerator.TONE_PROP_BEEP2, 200)
+                        result.success(null)
+                    }
                     else -> result.notImplemented()
                 }
             }

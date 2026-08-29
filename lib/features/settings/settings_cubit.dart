@@ -9,6 +9,12 @@ enum ThemePref { auto, light, dark }
 
 enum LocalePref { system, vi, en }
 
+/// How one alert type is announced.
+enum AlertSound { voice, beep, off }
+
+/// The four announceable alert types.
+enum AlertKind { departure, collision, lane, gap }
+
 class SettingsState extends Equatable {
   const SettingsState({
     this.themePref = ThemePref.auto,
@@ -16,6 +22,10 @@ class SettingsState extends Equatable {
     this.sensitivity = 1,
     this.devMode = false,
     this.testMode = false,
+    this.soundDeparture = AlertSound.voice,
+    this.soundCollision = AlertSound.voice,
+    this.soundLane = AlertSound.voice,
+    this.soundGap = AlertSound.voice,
     this.loaded = false,
   });
 
@@ -31,7 +41,19 @@ class SettingsState extends Equatable {
 
   /// Experimental features: lane visualization + lane-departure warning.
   final bool testMode;
+
+  final AlertSound soundDeparture;
+  final AlertSound soundCollision;
+  final AlertSound soundLane;
+  final AlertSound soundGap;
   final bool loaded;
+
+  AlertSound soundFor(AlertKind kind) => switch (kind) {
+        AlertKind.departure => soundDeparture,
+        AlertKind.collision => soundCollision,
+        AlertKind.lane => soundLane,
+        AlertKind.gap => soundGap,
+      };
 
   /// Resolves the Material theme mode. `auto` follows real daylight at the
   /// vehicle position (domain/solar.dart), not fixed clock hours.
@@ -53,6 +75,10 @@ class SettingsState extends Equatable {
     int? sensitivity,
     bool? devMode,
     bool? testMode,
+    AlertSound? soundDeparture,
+    AlertSound? soundCollision,
+    AlertSound? soundLane,
+    AlertSound? soundGap,
     bool? loaded,
   }) =>
       SettingsState(
@@ -61,12 +87,26 @@ class SettingsState extends Equatable {
         sensitivity: sensitivity ?? this.sensitivity,
         devMode: devMode ?? this.devMode,
         testMode: testMode ?? this.testMode,
+        soundDeparture: soundDeparture ?? this.soundDeparture,
+        soundCollision: soundCollision ?? this.soundCollision,
+        soundLane: soundLane ?? this.soundLane,
+        soundGap: soundGap ?? this.soundGap,
         loaded: loaded ?? this.loaded,
       );
 
   @override
-  List<Object?> get props =>
-      [themePref, localePref, sensitivity, devMode, testMode, loaded];
+  List<Object?> get props => [
+        themePref,
+        localePref,
+        sensitivity,
+        devMode,
+        testMode,
+        soundDeparture,
+        soundCollision,
+        soundLane,
+        soundGap,
+        loaded,
+      ];
 }
 
 class SettingsCubit extends Cubit<SettingsState> {
@@ -77,6 +117,7 @@ class SettingsCubit extends Cubit<SettingsState> {
   static const _kSensitivity = 'settings_sensitivity_v1';
   static const _kDevMode = 'settings_dev_mode_v1';
   static const _kTestMode = 'settings_test_mode_v1';
+  static const _kSoundPrefix = 'settings_alert_sound_v1_';
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -86,6 +127,10 @@ class SettingsCubit extends Cubit<SettingsState> {
       sensitivity: (prefs.getInt(_kSensitivity) ?? 1).clamp(1, 10),
       devMode: prefs.getBool(_kDevMode) ?? false,
       testMode: prefs.getBool(_kTestMode) ?? false,
+      soundDeparture: _loadSound(prefs, AlertKind.departure),
+      soundCollision: _loadSound(prefs, AlertKind.collision),
+      soundLane: _loadSound(prefs, AlertKind.lane),
+      soundGap: _loadSound(prefs, AlertKind.gap),
       loaded: true,
     ));
   }
@@ -113,6 +158,22 @@ class SettingsCubit extends Cubit<SettingsState> {
     emit(state.copyWith(devMode: on));
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_kDevMode, on);
+  }
+
+  static AlertSound _loadSound(SharedPreferences prefs, AlertKind kind) {
+    final i = prefs.getInt('$_kSoundPrefix${kind.name}') ?? 0;
+    return AlertSound.values[i.clamp(0, AlertSound.values.length - 1)];
+  }
+
+  Future<void> setAlertSound(AlertKind kind, AlertSound sound) async {
+    emit(switch (kind) {
+      AlertKind.departure => state.copyWith(soundDeparture: sound),
+      AlertKind.collision => state.copyWith(soundCollision: sound),
+      AlertKind.lane => state.copyWith(soundLane: sound),
+      AlertKind.gap => state.copyWith(soundGap: sound),
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('$_kSoundPrefix${kind.name}', sound.index);
   }
 
   Future<void> setTestMode(bool on) async {

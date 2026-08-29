@@ -33,4 +33,7 @@ class AdasChannel {
     return null;
   }
   static Future<void> stop() => _control.invokeMethod('stop');
+
+  /// Plays a short native system beep (alert-sound option "beep").
+  static Future<void> beep() => _control.invokeMethod('beep');
 }

@@ -81,6 +81,44 @@ void main() {
       );
     });
 
+    test('suppressed while creeping at parking speed', () {
+      final m = CollisionMonitor();
+      var alert = AdasAlert.none;
+      var d = 12.0;
+      for (var i = 0; i <= 40; i++) {
+        alert = m.update(distanceM: d, egoSpeedKmh: 5, ts: at(i * 0.1));
+        d -= 0.08; // creeping closer at 0.8 m/s
+        expect(alert, AdasAlert.none);
+      }
+    });
+
+    test('lead switch (distance jump) does not fake a closing speed', () {
+      final m = CollisionMonitor();
+      var alert = AdasAlert.none;
+      // Following a car at 50 m...
+      for (var i = 0; i < 10; i++) {
+        alert = m.update(distanceM: 50, egoSpeedKmh: 70, ts: at(i * 0.1));
+      }
+      // ...a motorbike cuts in at 9 m: one-frame jump, then steady.
+      for (var i = 10; i < 20; i++) {
+        alert = m.update(distanceM: 9, egoSpeedKmh: 70, ts: at(i * 0.1));
+        expect(alert, isNot(AdasAlert.collision));
+        expect(alert, isNot(AdasAlert.collisionCritical));
+      }
+    });
+
+    test('losing the lead resets the closing estimate', () {
+      final m = CollisionMonitor();
+      var d = 40.0;
+      for (var i = 0; i < 8; i++) {
+        m.update(distanceM: d, egoSpeedKmh: 60, ts: at(i * 0.1));
+        d -= 1.0; // closing at 10 m/s
+      }
+      expect(m.closingSpeedMps, greaterThan(1));
+      m.update(distanceM: null, egoSpeedKmh: 60, ts: at(0.9));
+      expect(m.closingSpeedMps, 0);
+    });
+
     test('steady following produces no TTC alert', () {
       final m = CollisionMonitor();
       var alert = AdasAlert.none;
