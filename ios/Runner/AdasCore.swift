@@ -308,6 +308,7 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     }
 
     var detections: [[String: Any]] = []
+    var vehicleBoxes: [CGRect] = []
     for observation in request.results as? [VNRecognizedObjectObservation] ?? [] {
       guard let label = observation.labels.first,
             Self.allowedClasses.contains(label.identifier) else { continue }
@@ -325,6 +326,7 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
         "w": boxW,
         "h": boxH,
       ])
+      vehicleBoxes.append(CGRect(x: boxX, y: boxYTop, width: boxW, height: boxH))
     }
 
     var frame: [String: Any] = [
@@ -335,7 +337,7 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
       "fx": latestFx as Any,
       "detections": detections,
     ]
-    if let lane = detectLane(in: pixelBuffer) {
+    if let lane = detectLane(in: pixelBuffer, excluding: vehicleBoxes) {
       frame["lane"] = lane
     }
     emit(frame)
@@ -350,26 +352,38 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
 
   // MARK: - Lane detection (test-mode, classic CV)
 
-  /// Fits the two ego-lane boundaries in the bottom part of the frame by
-  /// scanning horizontal luminance gradients outward from the image center
-  /// on ~24 rows and least-squares fitting x = a*y + b per side.
-  /// Deliberately simple — this ships behind the test-mode flag.
-  private func detectLane(in pixelBuffer: CVPixelBuffer) -> [String: Any]? {
+  private var prevLeftFit: (a: Double, b: Double)?
+  private var prevRightFit: (a: Double, b: Double)?
+  private var laneMissCount = 0
+
+  /// Finds the ego-lane boundaries as painted STRIPES: a candidate pixel
+  /// must be brighter than BOTH sides (top-hat test), so curbs, medians and
+  /// shadow edges — which only contrast on one side — cannot win. Per row
+  /// the stripe NEAREST the image center is taken (the ego-lane boundary is
+  /// by definition the innermost marking), regions covered by detected
+  /// vehicles are skipped, the fit gets one outlier-trimming round, and the
+  /// result is tracked across frames (guided search window + EMA smoothing).
+  private func detectLane(in pixelBuffer: CVPixelBuffer,
+                          excluding boxes: [CGRect]) -> [String: Any]? {
     CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
     defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
-    guard let base = CVPixelBufferGetBaseAddress(pixelBuffer) else { return nil }
+    guard let base = CVPixelBufferGetBaseAddress(pixelBuffer) else { return laneMiss() }
     let w = CVPixelBufferGetWidth(pixelBuffer)
     let h = CVPixelBufferGetHeight(pixelBuffer)
     let rowStride = CVPixelBufferGetBytesPerRow(pixelBuffer)
     let ptr = base.assumingMemoryBound(to: UInt8.self)
 
-    let yTop = Int(Double(h) * 0.58)
-    let yBot = h - Int(Double(h) * 0.04)
+    let scale = Double(w) / 1920.0
+    // Stop above the hood: dashboard reflections at the bottom edge produce
+    // strong fake edges (mounting guide keeps the hood under ~10%).
+    let yTop = Int(Double(h) * 0.56)
+    let yBot = Int(Double(h) * 0.90)
     let xMid = w / 2
-    let xSpan = Int(Double(w) * 0.42)
-    let stepY = max(1, (yBot - yTop) / 24)
-    let stepX = 4
-    let gradientThreshold = 28
+    let xSpan = Int(Double(w) * 0.45)
+    let stepY = max(1, (yBot - yTop) / 26)
+    let stepX = max(2, Int(3 * scale))
+    let brightThr = 18
+    let trackWindow = Int(90 * scale)
 
     var leftPts: [(y: Double, x: Double)] = []
     var rightPts: [(y: Double, x: Double)] = []
@@ -378,37 +392,68 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     while y < yBot {
       scannedRows += 1
       let row = ptr + y * rowStride
-      // Green channel of BGRA as a cheap luminance proxy.
       func lum(_ x: Int) -> Int { Int(row[x * 4 + 1]) }
-      var bestL = -1, bestLg = gradientThreshold
-      var x = xMid - stepX
-      while x > xMid - xSpan {
-        let g = abs(lum(x + stepX) - lum(x - stepX))
-        if g > bestLg { bestLg = g; bestL = x }
-        x -= stepX
+      // Expected stripe half-width grows toward the camera (perspective).
+      let t = Double(y - yTop) / Double(max(1, yBot - yTop))
+      let off = max(3, Int((6 + 16 * t) * scale))
+      func blocked(_ x: Int) -> Bool {
+        let p = CGPoint(x: Double(x), y: Double(y))
+        return boxes.contains { $0.insetBy(dx: -10, dy: -10).contains(p) }
       }
-      var bestR = -1, bestRg = gradientThreshold
-      x = xMid + stepX
-      while x < xMid + xSpan - stepX {
-        let g = abs(lum(x + stepX) - lum(x - stepX))
-        if g > bestRg { bestRg = g; bestR = x }
-        x += stepX
+      func isStripe(_ x: Int) -> Bool {
+        guard x - off - stepX >= 0, x + off + stepX < w, !blocked(x) else { return false }
+        let c = lum(x)
+        return c - lum(x - off) > brightThr && c - lum(x + off) > brightThr
       }
-      if bestL >= 0 { leftPts.append((Double(y), Double(bestL))) }
-      if bestR >= 0 { rightPts.append((Double(y), Double(bestR))) }
+      func scanSide(prev: (a: Double, b: Double)?, isLeft: Bool) -> Int {
+        if let fit = prev {
+          // Tracking: search only near the previous line's position.
+          let cx = Int(fit.a * Double(y) + fit.b)
+          let inner = isLeft ? min(cx + trackWindow, xMid - stepX)
+                             : max(cx - trackWindow, xMid + stepX)
+          let outer = isLeft ? max(cx - trackWindow, xMid - xSpan)
+                             : min(cx + trackWindow, xMid + xSpan)
+          var x = inner
+          while isLeft ? x > outer : x < outer {
+            if isStripe(x) { return x }
+            x += isLeft ? -stepX : stepX
+          }
+          return -1
+        }
+        // Acquisition: nearest stripe to the center wins.
+        var x = isLeft ? xMid - off - stepX : xMid + off + stepX
+        while isLeft ? x > xMid - xSpan : x < xMid + xSpan {
+          if isStripe(x) { return x }
+          x += isLeft ? -stepX : stepX
+        }
+        return -1
+      }
+      let xl = scanSide(prev: prevLeftFit, isLeft: true)
+      if xl >= 0 { leftPts.append((Double(y), Double(xl))) }
+      let xr = scanSide(prev: prevRightFit, isLeft: false)
+      if xr >= 0 { rightPts.append((Double(y), Double(xr))) }
       y += stepY
     }
 
-    guard leftPts.count >= 8, rightPts.count >= 8,
-          let l = Self.fitLine(leftPts), let r = Self.fitLine(rightPts)
-    else { return nil }
+    guard leftPts.count >= 7, rightPts.count >= 7,
+          var l = Self.fitLineTrimmed(leftPts),
+          var r = Self.fitLineTrimmed(rightPts)
+    else { return laneMiss() }
+
+    // Temporal smoothing: lane geometry changes slowly at 10 Hz.
+    if let p = prevLeftFit { l = (a: p.a * 0.6 + l.a * 0.4, b: p.b * 0.6 + l.b * 0.4) }
+    if let p = prevRightFit { r = (a: p.a * 0.6 + r.a * 0.4, b: p.b * 0.6 + r.b * 0.4) }
 
     let yB = Double(yBot), yT = Double(yTop)
     let xlB = l.a * yB + l.b, xrB = r.a * yB + r.b
     let laneWidth = xrB - xlB
-    guard laneWidth > Double(w) * 0.18, laneWidth < Double(w) * 0.95,
+    guard laneWidth > Double(w) * 0.16, laneWidth < Double(w) * 0.70,
           xlB < Double(xMid), xrB > Double(xMid)
-    else { return nil }
+    else { return laneMiss() }
+
+    prevLeftFit = l
+    prevRightFit = r
+    laneMissCount = 0
 
     let center = (xlB + xrB) / 2
     let offset = (Double(xMid) - center) / (laneWidth / 2)
@@ -419,6 +464,31 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
       "offset": max(-2.0, min(2.0, offset)),
       "conf": min(1.0, conf),
     ]
+  }
+
+  /// Records a miss; tracking state survives short dropouts (dashed lines,
+  /// crossings) and resets after ~1.2 s without a lane.
+  private func laneMiss() -> [String: Any]? {
+    laneMissCount += 1
+    if laneMissCount > 12 {
+      prevLeftFit = nil
+      prevRightFit = nil
+    }
+    return nil
+  }
+
+  /// Least-squares fit of x = a*y + b with one MAD-based trimming round.
+  private static func fitLineTrimmed(
+    _ pts: [(y: Double, x: Double)]
+  ) -> (a: Double, b: Double)? {
+    guard let first = fitLine(pts) else { return nil }
+    let residuals = pts.map { abs($0.x - (first.a * $0.y + first.b)) }
+    let sorted = residuals.sorted()
+    let mad = sorted[sorted.count / 2]
+    let cut = Swift.max(4.0, mad * 2.5)
+    let kept = zip(pts, residuals).filter { $0.1 <= cut }.map { $0.0 }
+    guard kept.count >= 6, let refit = fitLine(kept) else { return first }
+    return refit
   }
 
   /// Least-squares fit of x = a*y + b.
