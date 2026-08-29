@@ -12,7 +12,11 @@ PY=python3.12
 [ -d .venv-export ] || "$PY" -m venv .venv-export
 source .venv-export/bin/activate
 python -m pip install --quiet --upgrade pip
-python -m pip install --quiet "ultralytics>=8.3,<9" "coremltools>=8"
+# torch is pinned: newer torch versions outpace the coremltools converter
+# frontend (torch 2.13 + coremltools 9.0 fails with "only 0-dimensional
+# arrays can be converted to Python scalars").
+python -m pip install --quiet "torch==2.5.1" "torchvision==0.20.1" \
+  "coremltools>=8.2,<9" "ultralytics>=8.3,<9"
 
 yolo export model=yolo11n.pt format=coreml nms=True imgsz=640 half=True
 

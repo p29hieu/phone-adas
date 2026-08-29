@@ -110,14 +110,15 @@ the model is missing). `android/.../AdasCore.kt` — mock emitter (phase 3).
 
 ### iOS model
 
-Build the Core ML model once per checkout (not committed until stable):
+`ios/Runner/Models/yolo11n.mlmodelc` (5.3 MB, FP16, NMS pipeline) is
+committed so every checkout builds identically. To regenerate it (e.g. to
+try a bigger model):
 
 ```bash
-./tools/export_model.sh   # needs python3.12; ~5 min first run
+./tools/export_model.sh   # needs python3.12; torch is version-pinned inside
 ```
 
-This produces `ios/Runner/Models/yolo11n.mlmodelc` (bundled as a folder
-resource). Without it the app still runs — live preview + mock detections.
+Without the model the app still runs — live preview + mock detections.
 YOLO11 weights are AGPL-3.0: fine for personal use, re-check before any
 public distribution.
 
