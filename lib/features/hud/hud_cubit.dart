@@ -10,6 +10,7 @@ import '../../app/app_bloc_observer.dart';
 import '../../core/adas_channel.dart';
 import '../../domain/collision_warning.dart';
 import '../../domain/distance_estimator.dart';
+import '../../domain/lane_monitor.dart';
 import '../../domain/lead_departure.dart';
 import '../../domain/models.dart';
 import '../../domain/safe_distance.dart';
@@ -32,6 +33,13 @@ class HudCubit extends Cubit<HudState> {
   final DistanceEstimator _estimator = DistanceEstimator();
   final CollisionMonitor _collision = CollisionMonitor();
   final LeadDepartureDetector _departure = LeadDepartureDetector();
+  final LaneMonitor _laneMonitor = LaneMonitor();
+
+  /// Displayed distances refresh at this interval; the safety pipeline and
+  /// alerts always run per frame (~10 Hz). Configured from the settings
+  /// "sensor sensitivity" slider via [applyDisplaySensitivity].
+  Duration _displayInterval = const Duration(seconds: 1);
+  DateTime? _lastDisplayAt;
 
   StreamSubscription<AdasFrame>? _frameSub;
   StreamSubscription<Position>? _posSub;
@@ -43,6 +51,12 @@ class HudCubit extends Cubit<HudState> {
   static const _weatherRefresh = Duration(minutes: 15);
   static const _geocodeMinInterval = Duration(minutes: 2);
   static const _geocodeMinMoveMeters = 1000.0;
+
+  /// [level] 1-10 = displayed updates per second.
+  void applyDisplaySensitivity(int level) {
+    _displayInterval =
+        Duration(milliseconds: (1000 / level.clamp(1, 10)).round());
+  }
 
   Future<void> start() async {
     await reloadCalibration();
@@ -107,6 +121,13 @@ class HudCubit extends Cubit<HudState> {
       ts: frame.ts,
     );
 
+    final laneFired = _laneMonitor.update(
+      offset: frame.lane?.offset,
+      conf: frame.lane?.conf ?? 0,
+      egoSpeedKmh: state.speedKmh,
+      ts: frame.ts,
+    );
+
     if (alert != state.alert) {
       crashlyticsLog('HudCubit: alert ${state.alert} -> $alert '
           '(d=${distance?.toStringAsFixed(1)}m v=${state.speedKmh.toStringAsFixed(0)}km/h)');
@@ -114,6 +135,21 @@ class HudCubit extends Cubit<HudState> {
     if (departed) {
       crashlyticsLog('HudCubit: lead departed');
     }
+    if (laneFired) {
+      crashlyticsLog('HudCubit: lane departure ${_laneMonitor.status}');
+    }
+
+    // Display throttle: safety events always refresh immediately; routine
+    // distance updates follow the configured sensitivity.
+    final now = frame.ts;
+    final mustDisplay = alert != state.alert ||
+        departed ||
+        laneFired ||
+        _laneMonitor.status != state.laneStatus ||
+        _lastDisplayAt == null ||
+        now.difference(_lastDisplayAt!) >= _displayInterval;
+    if (!mustDisplay) return;
+    _lastDisplayAt = now;
 
     emit(state.copyWith(
       mock: frame.mock,
@@ -124,6 +160,9 @@ class HudCubit extends Cubit<HudState> {
       requiredGapM: SafeDistance.legalMinimumMeters(state.speedKmh),
       alert: alert,
       departureCount: departed ? state.departureCount + 1 : null,
+      lane: frame.lane,
+      laneStatus: _laneMonitor.status,
+      laneEventCount: laneFired ? state.laneEventCount + 1 : null,
     ));
   }
 

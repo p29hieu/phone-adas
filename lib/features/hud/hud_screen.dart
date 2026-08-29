@@ -11,9 +11,11 @@ import '../../cookbook/bbox_overlay.dart';
 import '../../cookbook/hud_numeral.dart';
 import '../../cookbook/status_badge.dart';
 import '../../domain/collision_warning.dart';
+import '../../domain/distance_format.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/weather_service.dart';
 import '../calibration/calibration_screen.dart';
+import 'lane_overlay.dart';
 import '../settings/settings_cubit.dart';
 import 'hud_cubit.dart';
 import 'hud_state.dart';
@@ -134,7 +136,7 @@ class _HudScreenState extends State<HudScreen> {
     }
     return BBoxItem(
       rect: v.rect,
-      label: '${v.distanceM.toStringAsFixed(1)} m',
+      label: '${formatDistanceM(v.distanceM)} m',
       color: color,
       textColor: text,
       emphasized: emphasized,
@@ -160,10 +162,15 @@ class _HudScreenState extends State<HudScreen> {
       body: BlocConsumer<HudCubit, HudState>(
         listenWhen: (prev, next) =>
             prev.alert != next.alert ||
-            prev.departureCount != next.departureCount,
+            prev.departureCount != next.departureCount ||
+            prev.laneEventCount != next.laneEventCount,
         listener: (context, state) {
           if (state.departureCount > 0) {
             _speak(l10n.warnLeadDeparted);
+          }
+          if (state.laneEventCount > 0 &&
+              context.read<SettingsCubit>().state.testMode) {
+            _speak(l10n.warnLaneDeparture);
           }
           switch (state.alert) {
             case AdasAlert.collision:
@@ -226,6 +233,14 @@ class _HudScreenState extends State<HudScreen> {
                     ],
                   ),
                 ),
+                if (context.watch<SettingsCubit>().state.testMode &&
+                    state.lane != null)
+                  LaneOverlay(
+                    lane: state.lane!,
+                    frameSize:
+                        Size(state.frameW.toDouble(), state.frameH.toDouble()),
+                    status: state.laneStatus,
+                  ),
                 BBoxOverlay(
                   frameSize:
                       Size(state.frameW.toDouble(), state.frameH.toDouble()),
@@ -256,6 +271,18 @@ class _HudScreenState extends State<HudScreen> {
                                 label:
                                     '${state.weather!.tempC.round()}°C'
                                     '${state.weather!.isStale ? ' *' : ''}',
+                              ),
+                            if (context.watch<SettingsCubit>().state.devMode)
+                              StatusBadge(
+                                l10n.devCounts(
+                                  state.vehicles
+                                      .where((v) => v.cls != 'motorcycle')
+                                      .length,
+                                  state.vehicles
+                                      .where((v) => v.cls == 'motorcycle')
+                                      .length,
+                                ),
+                                background: const Color(0xCC1565C0),
                               ),
                           ],
                         ),
@@ -531,6 +558,40 @@ class _SettingsSheet extends StatelessWidget {
                 title: Text(l10n.settingsCalibration),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: onCalibrate,
+              ),
+              const Divider(),
+              Text(l10n.settingsSensitivity,
+                  style: Theme.of(context).textTheme.titleMedium),
+              Row(
+                children: [
+                  Expanded(
+                    child: Slider(
+                      value: settings.sensitivity.toDouble(),
+                      min: 1,
+                      max: 10,
+                      divisions: 9,
+                      label: '${settings.sensitivity}',
+                      onChanged: (v) => cubit.setSensitivity(v.round()),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 28,
+                    child: Text('${settings.sensitivity}',
+                        textAlign: TextAlign.center),
+                  ),
+                ],
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: settings.testMode,
+                title: Text(l10n.settingsTestMode),
+                onChanged: cubit.setTestMode,
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: settings.devMode,
+                title: Text(l10n.settingsDevMode),
+                onChanged: cubit.setDevMode,
               ),
               const Divider(),
               Text(l10n.settingsTheme,

@@ -314,20 +314,110 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
       ])
     }
 
-    emit([
+    var frame: [String: Any] = [
       "ts": Int(Date().timeIntervalSince1970 * 1000),
       "mock": false,
       "frameW": frameW,
       "frameH": frameH,
       "fx": latestFx as Any,
       "detections": detections,
-    ])
+    ]
+    if let lane = detectLane(in: pixelBuffer) {
+      frame["lane"] = lane
+    }
+    emit(frame)
   }
 
   private func emit(_ frame: [String: Any]) {
     DispatchQueue.main.async { [weak self] in
       self?.sink?(frame)
     }
+  }
+
+
+  // MARK: - Lane detection (test-mode, classic CV)
+
+  /// Fits the two ego-lane boundaries in the bottom part of the frame by
+  /// scanning horizontal luminance gradients outward from the image center
+  /// on ~24 rows and least-squares fitting x = a*y + b per side.
+  /// Deliberately simple — this ships behind the test-mode flag.
+  private func detectLane(in pixelBuffer: CVPixelBuffer) -> [String: Any]? {
+    CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+    defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+    guard let base = CVPixelBufferGetBaseAddress(pixelBuffer) else { return nil }
+    let w = CVPixelBufferGetWidth(pixelBuffer)
+    let h = CVPixelBufferGetHeight(pixelBuffer)
+    let rowStride = CVPixelBufferGetBytesPerRow(pixelBuffer)
+    let ptr = base.assumingMemoryBound(to: UInt8.self)
+
+    let yTop = Int(Double(h) * 0.58)
+    let yBot = h - Int(Double(h) * 0.04)
+    let xMid = w / 2
+    let xSpan = Int(Double(w) * 0.42)
+    let stepY = max(1, (yBot - yTop) / 24)
+    let stepX = 4
+    let gradientThreshold = 28
+
+    var leftPts: [(y: Double, x: Double)] = []
+    var rightPts: [(y: Double, x: Double)] = []
+    var scannedRows = 0
+    var y = yTop
+    while y < yBot {
+      scannedRows += 1
+      let row = ptr + y * rowStride
+      // Green channel of BGRA as a cheap luminance proxy.
+      func lum(_ x: Int) -> Int { Int(row[x * 4 + 1]) }
+      var bestL = -1, bestLg = gradientThreshold
+      var x = xMid - stepX
+      while x > xMid - xSpan {
+        let g = abs(lum(x + stepX) - lum(x - stepX))
+        if g > bestLg { bestLg = g; bestL = x }
+        x -= stepX
+      }
+      var bestR = -1, bestRg = gradientThreshold
+      x = xMid + stepX
+      while x < xMid + xSpan - stepX {
+        let g = abs(lum(x + stepX) - lum(x - stepX))
+        if g > bestRg { bestRg = g; bestR = x }
+        x += stepX
+      }
+      if bestL >= 0 { leftPts.append((Double(y), Double(bestL))) }
+      if bestR >= 0 { rightPts.append((Double(y), Double(bestR))) }
+      y += stepY
+    }
+
+    guard leftPts.count >= 8, rightPts.count >= 8,
+          let l = Self.fitLine(leftPts), let r = Self.fitLine(rightPts)
+    else { return nil }
+
+    let yB = Double(yBot), yT = Double(yTop)
+    let xlB = l.a * yB + l.b, xrB = r.a * yB + r.b
+    let laneWidth = xrB - xlB
+    guard laneWidth > Double(w) * 0.18, laneWidth < Double(w) * 0.95,
+          xlB < Double(xMid), xrB > Double(xMid)
+    else { return nil }
+
+    let center = (xlB + xrB) / 2
+    let offset = (Double(xMid) - center) / (laneWidth / 2)
+    let conf = Double(min(leftPts.count, rightPts.count)) / Double(max(1, scannedRows))
+    return [
+      "left": [xlB, yB, l.a * yT + l.b, yT],
+      "right": [xrB, yB, r.a * yT + r.b, yT],
+      "offset": max(-2.0, min(2.0, offset)),
+      "conf": min(1.0, conf),
+    ]
+  }
+
+  /// Least-squares fit of x = a*y + b.
+  private static func fitLine(_ pts: [(y: Double, x: Double)]) -> (a: Double, b: Double)? {
+    let n = Double(pts.count)
+    var sy = 0.0, sx = 0.0, syy = 0.0, syx = 0.0
+    for p in pts { sy += p.y; sx += p.x; syy += p.y * p.y; syx += p.y * p.x }
+    let denom = n * syy - sy * sy
+    guard abs(denom) > 1e-6 else { return nil }
+    let a = (n * syx - sy * sx) / denom
+    let b = (sx - a * sy) / n
+    return (a, b)
   }
 
   // MARK: - Mock emitter (simulator / model missing / permission denied)
@@ -373,6 +463,12 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
         box("car", 960, 620, 1.8, dCenter, 0.8, 0.93),
         box("car", 1330, 660, 1.8, dRight, 0.8, 0.91),
       ],
+      "lane": [
+        "left": [760.0 - 80.0 * sin(mockPhase / 7.0), 1080.0, 880.0, 626.0],
+        "right": [1160.0 - 80.0 * sin(mockPhase / 7.0), 1080.0, 1040.0, 626.0],
+        "offset": 0.65 * sin(mockPhase / 7.0),
+        "conf": 0.9,
+      ] as [String: Any],
     ])
   }
 }

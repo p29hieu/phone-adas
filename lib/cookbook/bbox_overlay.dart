@@ -58,6 +58,14 @@ Rect mapFrameRectToScreen(Rect rect, Size frame, Size screen) {
   );
 }
 
+/// Maps a point from a [frame]-sized space onto a [screen]-sized space
+/// with the same cover-fit transform as [mapFrameRectToScreen].
+Offset mapFramePointToScreen(Offset point, Size frame, Size screen) {
+  final r = mapFrameRectToScreen(
+      Rect.fromLTWH(point.dx, point.dy, 0, 0), frame, screen);
+  return Offset(r.left, r.top);
+}
+
 class BBoxOverlay extends StatelessWidget {
   const BBoxOverlay({
     super.key,

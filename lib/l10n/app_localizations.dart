@@ -373,6 +373,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove calibration'**
   String get calibReset;
+
+  /// No description provided for @settingsSensitivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Sensor sensitivity (updates/second)'**
+  String get settingsSensitivity;
+
+  /// No description provided for @settingsTestMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Test mode — lane detection (experimental)'**
+  String get settingsTestMode;
+
+  /// No description provided for @settingsDevMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer mode'**
+  String get settingsDevMode;
+
+  /// No description provided for @warnLaneDeparture.
+  ///
+  /// In en, this message translates to:
+  /// **'Lane departure'**
+  String get warnLaneDeparture;
+
+  /// No description provided for @devCounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Cars {cars} · Motorbikes {motos}'**
+  String devCounts(int cars, int motos);
 }
 
 class _AppLocalizationsDelegate

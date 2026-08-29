@@ -60,7 +60,12 @@ class _PhoneAdasAppState extends State<PhoneAdasApp> {
         BlocProvider(create: (_) => SettingsCubit()..load()),
         BlocProvider(create: (_) => HudCubit()..start()),
       ],
-      child: Builder(
+      child: BlocListener<SettingsCubit, SettingsState>(
+        listenWhen: (prev, next) => prev.sensitivity != next.sensitivity,
+        listener: (context, settings) => context
+            .read<HudCubit>()
+            .applyDisplaySensitivity(settings.sensitivity),
+        child: Builder(
         builder: (context) {
           final settings = context.watch<SettingsCubit>().state;
           final isDay = context
@@ -83,6 +88,7 @@ class _PhoneAdasAppState extends State<PhoneAdasApp> {
             home: const HudScreen(),
           );
         },
+        ),
       ),
     );
   }

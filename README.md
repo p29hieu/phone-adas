@@ -95,7 +95,10 @@ lib/
 external-UVC source):
 
 - `EventChannel app.mikosea.test/detections` → ~10 Hz maps:
-  `{ts, mock, frameW, frameH, fx?, detections: [{cls, conf, x, y, w, h}]}`
+  `{ts, mock, frameW, frameH, fx?, lane?, detections: [{cls, conf, x, y, w, h}]}`
+  (`lane` = {left: [x0,y0,x1,y1], right: [...], offset, conf} in frame
+  pixels — ego-lane estimate for the test-mode overlay; offset 0 = centered,
+  ±1 = on a lane line)
   (bbox in full-resolution frame pixels; `cls` ∈ car|truck|bus|motorcycle;
   `fx` = per-frame focal length in pixels from camera intrinsics when the
   platform provides it)

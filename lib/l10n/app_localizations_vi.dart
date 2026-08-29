@@ -159,4 +159,21 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get calibReset => 'Xóa hiệu chỉnh';
+
+  @override
+  String get settingsSensitivity => 'Độ nhạy cảm biến (lần cập nhật/giây)';
+
+  @override
+  String get settingsTestMode => 'Chế độ thử nghiệm — nhận diện làn đường';
+
+  @override
+  String get settingsDevMode => 'Chế độ nhà phát triển';
+
+  @override
+  String get warnLaneDeparture => 'Xe lệch làn';
+
+  @override
+  String devCounts(int cars, int motos) {
+    return 'Ô tô $cars · Xe máy $motos';
+  }
 }

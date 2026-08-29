@@ -29,6 +29,46 @@ class Detection {
       );
 }
 
+/// One lane boundary as a segment in frame pixels, bottom (x0,y0) to
+/// top (x1,y1).
+class LaneLine {
+  const LaneLine(this.x0, this.y0, this.x1, this.y1);
+
+  final double x0, y0, x1, y1;
+
+  factory LaneLine.fromList(List<dynamic> v) => LaneLine(
+        (v[0] as num).toDouble(),
+        (v[1] as num).toDouble(),
+        (v[2] as num).toDouble(),
+        (v[3] as num).toDouble(),
+      );
+}
+
+/// Ego-lane estimate from the native core (test-mode feature).
+class LaneObservation {
+  const LaneObservation({
+    required this.left,
+    required this.right,
+    required this.offset,
+    required this.conf,
+  });
+
+  final LaneLine left;
+  final LaneLine right;
+
+  /// Camera position within the lane, normalized to half the lane width:
+  /// 0 = centered, +1 = on the right line, -1 = on the left line.
+  final double offset;
+  final double conf;
+
+  factory LaneObservation.fromMap(Map<dynamic, dynamic> m) => LaneObservation(
+        left: LaneLine.fromList(m['left'] as List<dynamic>),
+        right: LaneLine.fromList(m['right'] as List<dynamic>),
+        offset: (m['offset'] as num).toDouble(),
+        conf: (m['conf'] as num).toDouble(),
+      );
+}
+
 class AdasFrame {
   const AdasFrame({
     required this.ts,
@@ -36,6 +76,7 @@ class AdasFrame {
     required this.frameW,
     required this.frameH,
     this.fx,
+    this.lane,
     required this.detections,
   });
 
@@ -48,6 +89,9 @@ class AdasFrame {
   /// Camera focal length in pixels for this frame (from iOS camera
   /// intrinsics). Null when the platform does not deliver intrinsics.
   final double? fx;
+
+  /// Ego-lane estimate, when the native core produced one this frame.
+  final LaneObservation? lane;
   final List<Detection> detections;
 
   factory AdasFrame.fromMap(Map<dynamic, dynamic> m) => AdasFrame(
@@ -56,6 +100,9 @@ class AdasFrame {
         frameW: (m['frameW'] as num).toInt(),
         frameH: (m['frameH'] as num).toInt(),
         fx: (m['fx'] as num?)?.toDouble(),
+        lane: m['lane'] is Map<dynamic, dynamic>
+            ? LaneObservation.fromMap(m['lane'] as Map<dynamic, dynamic>)
+            : null,
         detections: (m['detections'] as List<dynamic>? ?? const [])
             .map((e) => Detection.fromMap(e as Map<dynamic, dynamic>))
             .toList(growable: false),

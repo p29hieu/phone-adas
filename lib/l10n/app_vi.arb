@@ -45,5 +45,10 @@
   "calibRetry": "Làm lại",
   "calibSaved": "Đã lưu hiệu chỉnh",
   "calibCurrent": "Hiệu chỉnh hiện tại: {percent}",
-  "calibReset": "Xóa hiệu chỉnh"
+  "calibReset": "Xóa hiệu chỉnh",
+  "settingsSensitivity": "Độ nhạy cảm biến (lần cập nhật/giây)",
+  "settingsTestMode": "Chế độ thử nghiệm — nhận diện làn đường",
+  "settingsDevMode": "Chế độ nhà phát triển",
+  "warnLaneDeparture": "Xe lệch làn",
+  "devCounts": "Ô tô {cars} · Xe máy {motos}"
 }

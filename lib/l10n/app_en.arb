@@ -83,5 +83,20 @@
       }
     }
   },
-  "calibReset": "Remove calibration"
+  "calibReset": "Remove calibration",
+  "settingsSensitivity": "Sensor sensitivity (updates/second)",
+  "settingsTestMode": "Test mode — lane detection (experimental)",
+  "settingsDevMode": "Developer mode",
+  "warnLaneDeparture": "Lane departure",
+  "devCounts": "Cars {cars} · Motorbikes {motos}",
+  "@devCounts": {
+    "placeholders": {
+      "cars": {
+        "type": "int"
+      },
+      "motos": {
+        "type": "int"
+      }
+    }
+  }
 }

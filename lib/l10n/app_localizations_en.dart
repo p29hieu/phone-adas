@@ -162,4 +162,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calibReset => 'Remove calibration';
+
+  @override
+  String get settingsSensitivity => 'Sensor sensitivity (updates/second)';
+
+  @override
+  String get settingsTestMode => 'Test mode — lane detection (experimental)';
+
+  @override
+  String get settingsDevMode => 'Developer mode';
+
+  @override
+  String get warnLaneDeparture => 'Lane departure';
+
+  @override
+  String devCounts(int cars, int motos) {
+    return 'Cars $cars · Motorbikes $motos';
+  }
 }

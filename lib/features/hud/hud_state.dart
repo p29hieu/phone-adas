@@ -3,6 +3,8 @@ import 'dart:ui' show Rect;
 import 'package:equatable/equatable.dart';
 
 import '../../domain/collision_warning.dart';
+import '../../domain/lane_monitor.dart';
+import '../../domain/models.dart';
 import '../../services/weather_service.dart';
 
 enum HudStatus { initializing, running, locationDenied }
@@ -41,6 +43,9 @@ class HudState extends Equatable {
     this.requiredGapM = 0,
     this.alert = AdasAlert.none,
     this.departureCount = 0,
+    this.lane,
+    this.laneStatus = LaneStatus.unknown,
+    this.laneEventCount = 0,
     this.speedKmh = 0,
     this.lat,
     this.lon,
@@ -67,6 +72,13 @@ class HudState extends Equatable {
 
   /// Increments once per "lead vehicle departed while stopped" event.
   final int departureCount;
+
+  /// Ego-lane estimate for the test-mode overlay (null = not detected).
+  final LaneObservation? lane;
+  final LaneStatus laneStatus;
+
+  /// Increments once per lane-departure event (test-mode warning).
+  final int laneEventCount;
   final double speedKmh;
   final double? lat;
   final double? lon;
@@ -87,6 +99,9 @@ class HudState extends Equatable {
     double? requiredGapM,
     AdasAlert? alert,
     int? departureCount,
+    Object? lane = _unset,
+    LaneStatus? laneStatus,
+    int? laneEventCount,
     double? speedKmh,
     double? lat,
     double? lon,
@@ -107,6 +122,9 @@ class HudState extends Equatable {
         requiredGapM: requiredGapM ?? this.requiredGapM,
         alert: alert ?? this.alert,
         departureCount: departureCount ?? this.departureCount,
+        lane: identical(lane, _unset) ? this.lane : lane as LaneObservation?,
+        laneStatus: laneStatus ?? this.laneStatus,
+        laneEventCount: laneEventCount ?? this.laneEventCount,
         speedKmh: speedKmh ?? this.speedKmh,
         lat: lat ?? this.lat,
         lon: lon ?? this.lon,
@@ -127,6 +145,10 @@ class HudState extends Equatable {
         requiredGapM,
         alert,
         departureCount,
+        lane?.offset,
+        lane?.conf,
+        laneStatus,
+        laneEventCount,
         speedKmh,
         lat,
         lon,
