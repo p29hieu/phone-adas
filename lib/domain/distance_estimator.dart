@@ -7,9 +7,13 @@ import 'models.dart';
 /// (AVCaptureConnection intrinsic matrix); the default matches a ~26 mm
 /// equivalent lens at 1920 px width.
 class DistanceEstimator {
-  DistanceEstimator({this.fPx = 1500});
+  DistanceEstimator({this.fPx = 1500, this.scale = 1.0});
 
   double fPx;
+
+  /// User-calibration correction factor (see domain/calibration.dart).
+  /// 1.0 = uncalibrated.
+  double scale;
 
   /// Assumed real vehicle widths per class, meters.
   static const Map<String, double> realWidthM = {
@@ -28,7 +32,7 @@ class DistanceEstimator {
   double? estimate(Detection d) {
     final w = realWidthM[d.cls];
     if (w == null || d.w <= 0) return null;
-    return w * fPx / d.w;
+    return w * fPx / d.w * scale;
   }
 
   /// v1 lead-vehicle pick: nearest (widest bbox) vehicle whose horizontal

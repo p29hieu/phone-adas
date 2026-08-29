@@ -99,4 +99,64 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get hudCameraPlaceholder =>
       'Camera thật sẽ có ở giai đoạn 2 — đang chạy dữ liệu giả lập';
+
+  @override
+  String get settingsCalibration => 'Hiệu chỉnh thông số';
+
+  @override
+  String get calibIntro =>
+      'Cố định điện thoại trên giá đỡ trước. Sau đó hướng camera vào một xe con đang đỗ ngay phía trước. Bạn sẽ đo hai lần: ở 10 m và 30 m (vạch đứt trên đường dài 3 m, cách nhau 6 m — dùng làm thước rất tiện).';
+
+  @override
+  String get calibStart => 'Bắt đầu';
+
+  @override
+  String calibPointPrompt(int index, int meters) {
+    return 'Điểm $index/2 — xe mục tiêu cách $meters m';
+  }
+
+  @override
+  String calibDetected(String meters) {
+    return 'Đang thấy: $meters m';
+  }
+
+  @override
+  String get calibNoVehicle => 'Chưa thấy xe — hướng camera vào xe';
+
+  @override
+  String get calibSample => 'Lấy mẫu (3 giây)';
+
+  @override
+  String get calibSampling => 'Giữ yên máy — đang lấy mẫu…';
+
+  @override
+  String get calibErrTooFew => 'Không đủ mẫu ổn định — thử lại';
+
+  @override
+  String get calibErrUnstable => 'Số đo dao động — giữ máy và xe đứng yên';
+
+  @override
+  String get calibErrInconsistent => 'Hai điểm đo lệch nhau — đo lại cả hai';
+
+  @override
+  String calibResultAdjust(String percent) {
+    return 'Khoảng cách sẽ được hiệu chỉnh $percent';
+  }
+
+  @override
+  String get calibSave => 'Lưu';
+
+  @override
+  String get calibRetry => 'Làm lại';
+
+  @override
+  String get calibSaved => 'Đã lưu hiệu chỉnh';
+
+  @override
+  String calibCurrent(String percent) {
+    return 'Hiệu chỉnh hiện tại: $percent';
+  }
+
+  @override
+  String get calibReset => 'Xóa hiệu chỉnh';
 }

@@ -100,4 +100,66 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get hudCameraPlaceholder =>
       'Live camera arrives in phase 2 — mock data for now';
+
+  @override
+  String get settingsCalibration => 'Calibrate distance';
+
+  @override
+  String get calibIntro =>
+      'Mount the phone firmly on its holder first. Then aim the camera at a parked car straight ahead. You will measure twice: at 10 m and at 30 m (lane dashes are 3 m long with 6 m gaps — handy as a ruler).';
+
+  @override
+  String get calibStart => 'Start';
+
+  @override
+  String calibPointPrompt(int index, int meters) {
+    return 'Point $index/2 — target car at $meters m';
+  }
+
+  @override
+  String calibDetected(String meters) {
+    return 'Detected: $meters m';
+  }
+
+  @override
+  String get calibNoVehicle => 'No vehicle detected — aim at the car';
+
+  @override
+  String get calibSample => 'Sample (3 s)';
+
+  @override
+  String get calibSampling => 'Hold still — sampling…';
+
+  @override
+  String get calibErrTooFew => 'Not enough stable detections — try again';
+
+  @override
+  String get calibErrUnstable =>
+      'Readings unstable — keep the phone and target still';
+
+  @override
+  String get calibErrInconsistent =>
+      'The two points disagree — redo both measurements';
+
+  @override
+  String calibResultAdjust(String percent) {
+    return 'Distances will be corrected by $percent';
+  }
+
+  @override
+  String get calibSave => 'Save';
+
+  @override
+  String get calibRetry => 'Redo';
+
+  @override
+  String get calibSaved => 'Calibration saved';
+
+  @override
+  String calibCurrent(String percent) {
+    return 'Current correction: $percent';
+  }
+
+  @override
+  String get calibReset => 'Remove calibration';
 }

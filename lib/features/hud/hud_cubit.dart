@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui' show Rect;
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -14,6 +15,7 @@ import '../../domain/models.dart';
 import '../../domain/safe_distance.dart';
 import '../../domain/solar.dart';
 import '../../services/weather_service.dart';
+import '../calibration/calibration_cubit.dart';
 import 'hud_state.dart';
 
 /// Fuses the native detection stream, GPS, weather and solar time into the
@@ -43,6 +45,7 @@ class HudCubit extends Cubit<HudState> {
   static const _geocodeMinMoveMeters = 1000.0;
 
   Future<void> start() async {
+    await reloadCalibration();
     final textureId = await AdasChannel.start();
     if (textureId != null) {
       emit(state.copyWith(textureId: textureId));
@@ -142,6 +145,17 @@ class HudCubit extends Cubit<HudState> {
       _refreshWeather();
     }
     _maybeReverseGeocode(pos);
+  }
+
+  /// (Re)loads the user's two-point calibration scale (see
+  /// features/calibration). Called on start and after saving a calibration.
+  Future<void> reloadCalibration() async {
+    final prefs = await SharedPreferences.getInstance();
+    final scale = prefs.getDouble(CalibrationCubit.prefsKey) ?? 1.0;
+    if (scale != _estimator.scale) {
+      _estimator.scale = scale;
+      crashlyticsLog('HudCubit: calibration scale=$scale');
+    }
   }
 
   Future<void> _refreshWeather() async {

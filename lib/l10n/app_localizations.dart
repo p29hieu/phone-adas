@@ -271,6 +271,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Live camera arrives in phase 2 — mock data for now'**
   String get hudCameraPlaceholder;
+
+  /// No description provided for @settingsCalibration.
+  ///
+  /// In en, this message translates to:
+  /// **'Calibrate distance'**
+  String get settingsCalibration;
+
+  /// No description provided for @calibIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Mount the phone firmly on its holder first. Then aim the camera at a parked car straight ahead. You will measure twice: at 10 m and at 30 m (lane dashes are 3 m long with 6 m gaps — handy as a ruler).'**
+  String get calibIntro;
+
+  /// No description provided for @calibStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get calibStart;
+
+  /// No description provided for @calibPointPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Point {index}/2 — target car at {meters} m'**
+  String calibPointPrompt(int index, int meters);
+
+  /// No description provided for @calibDetected.
+  ///
+  /// In en, this message translates to:
+  /// **'Detected: {meters} m'**
+  String calibDetected(String meters);
+
+  /// No description provided for @calibNoVehicle.
+  ///
+  /// In en, this message translates to:
+  /// **'No vehicle detected — aim at the car'**
+  String get calibNoVehicle;
+
+  /// No description provided for @calibSample.
+  ///
+  /// In en, this message translates to:
+  /// **'Sample (3 s)'**
+  String get calibSample;
+
+  /// No description provided for @calibSampling.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold still — sampling…'**
+  String get calibSampling;
+
+  /// No description provided for @calibErrTooFew.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough stable detections — try again'**
+  String get calibErrTooFew;
+
+  /// No description provided for @calibErrUnstable.
+  ///
+  /// In en, this message translates to:
+  /// **'Readings unstable — keep the phone and target still'**
+  String get calibErrUnstable;
+
+  /// No description provided for @calibErrInconsistent.
+  ///
+  /// In en, this message translates to:
+  /// **'The two points disagree — redo both measurements'**
+  String get calibErrInconsistent;
+
+  /// No description provided for @calibResultAdjust.
+  ///
+  /// In en, this message translates to:
+  /// **'Distances will be corrected by {percent}'**
+  String calibResultAdjust(String percent);
+
+  /// No description provided for @calibSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get calibSave;
+
+  /// No description provided for @calibRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Redo'**
+  String get calibRetry;
+
+  /// No description provided for @calibSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Calibration saved'**
+  String get calibSaved;
+
+  /// No description provided for @calibCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current correction: {percent}'**
+  String calibCurrent(String percent);
+
+  /// No description provided for @calibReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove calibration'**
+  String get calibReset;
 }
 
 class _AppLocalizationsDelegate

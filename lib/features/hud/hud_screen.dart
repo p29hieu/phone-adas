@@ -13,6 +13,7 @@ import '../../cookbook/status_badge.dart';
 import '../../domain/collision_warning.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/weather_service.dart';
+import '../calibration/calibration_screen.dart';
 import '../settings/settings_cubit.dart';
 import 'hud_cubit.dart';
 import 'hud_state.dart';
@@ -86,9 +87,25 @@ class _HudScreenState extends State<HudScreen> {
       context: context,
       builder: (sheetContext) => BlocProvider.value(
         value: context.read<SettingsCubit>(),
-        child: const _SettingsSheet(),
+        child: _SettingsSheet(onCalibrate: () {
+          Navigator.pop(sheetContext);
+          _openCalibration();
+        }),
       ),
     );
+  }
+
+  Future<void> _openCalibration() async {
+    final hudCubit = context.read<HudCubit>();
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) =>
+            CalibrationScreen(textureId: hudCubit.state.textureId),
+      ),
+    );
+    if (saved == true) {
+      await hudCubit.reloadCalibration();
+    }
   }
 
   static const _paleWhite = Color(0xF2FFFFFF);
@@ -493,7 +510,9 @@ class _ToolbarButton extends StatelessWidget {
 }
 
 class _SettingsSheet extends StatelessWidget {
-  const _SettingsSheet();
+  const _SettingsSheet({required this.onCalibrate});
+
+  final VoidCallback onCalibrate;
 
   @override
   Widget build(BuildContext context) {
@@ -506,6 +525,14 @@ class _SettingsSheet extends StatelessWidget {
             shrinkWrap: true,
             padding: const EdgeInsets.all(16),
             children: [
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.straighten),
+                title: Text(l10n.settingsCalibration),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: onCalibrate,
+              ),
+              const Divider(),
               Text(l10n.settingsTheme,
                   style: Theme.of(context).textTheme.titleMedium),
               RadioGroup<ThemePref>(

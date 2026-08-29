@@ -28,5 +28,22 @@
   "toolbarSettings": "Cài đặt",
   "toolbarHistory": "Lịch sử",
   "comingSoon": "Sắp có",
-  "hudCameraPlaceholder": "Camera thật sẽ có ở giai đoạn 2 — đang chạy dữ liệu giả lập"
+  "hudCameraPlaceholder": "Camera thật sẽ có ở giai đoạn 2 — đang chạy dữ liệu giả lập",
+  "settingsCalibration": "Hiệu chỉnh thông số",
+  "calibIntro": "Cố định điện thoại trên giá đỡ trước. Sau đó hướng camera vào một xe con đang đỗ ngay phía trước. Bạn sẽ đo hai lần: ở 10 m và 30 m (vạch đứt trên đường dài 3 m, cách nhau 6 m — dùng làm thước rất tiện).",
+  "calibStart": "Bắt đầu",
+  "calibPointPrompt": "Điểm {index}/2 — xe mục tiêu cách {meters} m",
+  "calibDetected": "Đang thấy: {meters} m",
+  "calibNoVehicle": "Chưa thấy xe — hướng camera vào xe",
+  "calibSample": "Lấy mẫu (3 giây)",
+  "calibSampling": "Giữ yên máy — đang lấy mẫu…",
+  "calibErrTooFew": "Không đủ mẫu ổn định — thử lại",
+  "calibErrUnstable": "Số đo dao động — giữ máy và xe đứng yên",
+  "calibErrInconsistent": "Hai điểm đo lệch nhau — đo lại cả hai",
+  "calibResultAdjust": "Khoảng cách sẽ được hiệu chỉnh {percent}",
+  "calibSave": "Lưu",
+  "calibRetry": "Làm lại",
+  "calibSaved": "Đã lưu hiệu chỉnh",
+  "calibCurrent": "Hiệu chỉnh hiện tại: {percent}",
+  "calibReset": "Xóa hiệu chỉnh"
 }

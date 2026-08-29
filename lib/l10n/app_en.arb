@@ -35,5 +35,53 @@
   "toolbarSettings": "Settings",
   "toolbarHistory": "History",
   "comingSoon": "Coming soon",
-  "hudCameraPlaceholder": "Live camera arrives in phase 2 — mock data for now"
+  "hudCameraPlaceholder": "Live camera arrives in phase 2 — mock data for now",
+  "settingsCalibration": "Calibrate distance",
+  "calibIntro": "Mount the phone firmly on its holder first. Then aim the camera at a parked car straight ahead. You will measure twice: at 10 m and at 30 m (lane dashes are 3 m long with 6 m gaps — handy as a ruler).",
+  "calibStart": "Start",
+  "calibPointPrompt": "Point {index}/2 — target car at {meters} m",
+  "@calibPointPrompt": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "calibDetected": "Detected: {meters} m",
+  "@calibDetected": {
+    "placeholders": {
+      "meters": {
+        "type": "String"
+      }
+    }
+  },
+  "calibNoVehicle": "No vehicle detected — aim at the car",
+  "calibSample": "Sample (3 s)",
+  "calibSampling": "Hold still — sampling…",
+  "calibErrTooFew": "Not enough stable detections — try again",
+  "calibErrUnstable": "Readings unstable — keep the phone and target still",
+  "calibErrInconsistent": "The two points disagree — redo both measurements",
+  "calibResultAdjust": "Distances will be corrected by {percent}",
+  "@calibResultAdjust": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "calibSave": "Save",
+  "calibRetry": "Redo",
+  "calibSaved": "Calibration saved",
+  "calibCurrent": "Current correction: {percent}",
+  "@calibCurrent": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "calibReset": "Remove calibration"
 }
