@@ -52,6 +52,8 @@ class HudState extends Equatable {
     this.areaName,
     this.weather,
     this.isDay = true,
+    this.isRecording = false,
+    this.recordingStartedAt,
   });
 
   final HudStatus status;
@@ -85,6 +87,8 @@ class HudState extends Equatable {
   final String? areaName;
   final WeatherSnapshot? weather;
   final bool isDay;
+  final bool isRecording;
+  final DateTime? recordingStartedAt;
 
   static const _unset = Object();
 
@@ -108,6 +112,8 @@ class HudState extends Equatable {
     String? areaName,
     WeatherSnapshot? weather,
     bool? isDay,
+    bool? isRecording,
+    Object? recordingStartedAt = _unset,
   }) =>
       HudState(
         status: status ?? this.status,
@@ -131,6 +137,10 @@ class HudState extends Equatable {
         areaName: areaName ?? this.areaName,
         weather: weather ?? this.weather,
         isDay: isDay ?? this.isDay,
+        isRecording: isRecording ?? this.isRecording,
+        recordingStartedAt: identical(recordingStartedAt, _unset)
+            ? this.recordingStartedAt
+            : recordingStartedAt as DateTime?,
       );
 
   @override
@@ -157,5 +167,7 @@ class HudState extends Equatable {
         weather?.kind,
         weather?.isStale,
         isDay,
+        isRecording,
+        recordingStartedAt,
       ];
 }

@@ -57,5 +57,9 @@
   "alertTypeGap": "Giữ khoảng cách tối thiểu",
   "soundVoice": "Nói",
   "soundBeep": "Bíp",
-  "soundOff": "Tắt"
+  "soundOff": "Tắt",
+  "recSaved": "Đã lưu video vào Ảnh",
+  "recFailed": "Không lưu được video",
+  "recNeedCamera": "Cần camera thật để quay",
+  "recTestModeOnly": "Bật Chế độ thử nghiệm để quay"
 }

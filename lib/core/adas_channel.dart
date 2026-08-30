@@ -36,4 +36,15 @@ class AdasChannel {
 
   /// Plays a short native system beep (alert-sound option "beep").
   static Future<void> beep() => _control.invokeMethod('beep');
+
+  /// Starts recording the camera feed natively (H.264 to a temp file).
+  /// Returns false when no real camera is available (simulator, Android
+  /// stub, permission denied).
+  static Future<bool> startRecording() async =>
+      await _control.invokeMethod<bool>('startRecording') ?? false;
+
+  /// Stops recording and returns the temp .mp4 path, or null when nothing
+  /// was recorded.
+  static Future<String?> stopRecording() =>
+      _control.invokeMethod<String>('stopRecording');
 }

@@ -112,6 +112,32 @@ class _HudScreenState extends State<HudScreen> {
         .showSnackBar(SnackBar(content: Text(l10n.comingSoon)));
   }
 
+  static String _fmtElapsed(Duration d) {
+    final m = d.inMinutes.toString().padLeft(2, '0');
+    final s = (d.inSeconds % 60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  Future<void> _toggleRecording(AppLocalizations l10n) async {
+    final messenger = ScaffoldMessenger.of(context);
+    if (!context.read<SettingsCubit>().state.testMode) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.recTestModeOnly)));
+      return;
+    }
+    final hud = context.read<HudCubit>();
+    if (hud.state.isRecording) {
+      final saved = await hud.stopRecordingAndSave();
+      messenger.showSnackBar(
+          SnackBar(content: Text(saved ? l10n.recSaved : l10n.recFailed)));
+    } else {
+      final started = await hud.startRecording();
+      if (!started) {
+        messenger
+            .showSnackBar(SnackBar(content: Text(l10n.recNeedCamera)));
+      }
+    }
+  }
+
   void _openSettings() {
     showModalBottomSheet<void>(
       context: context,
@@ -305,6 +331,13 @@ class _HudScreenState extends State<HudScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
+                                if (state.isRecording) ...[
+                                  StatusBadge(
+                                    'REC ${state.recordingStartedAt == null ? '' : _fmtElapsed(DateTime.now().difference(state.recordingStartedAt!))}',
+                                    background: const Color(0xFFC62828),
+                                  ),
+                                  const SizedBox(height: 6),
+                                ],
                                 if (state.mock) ...[
                                   StatusBadge(
                                     l10n.mockModeBadge,
@@ -341,7 +374,12 @@ class _HudScreenState extends State<HudScreen> {
                         Center(
                           child: _Toolbar(
                             l10n: l10n,
-                            onRecord: () => _comingSoon(l10n),
+                            isRecording: state.isRecording,
+                            recordingLabel: state.recordingStartedAt == null
+                                ? null
+                                : _fmtElapsed(DateTime.now().difference(
+                                    state.recordingStartedAt!)),
+                            onRecord: () => _toggleRecording(l10n),
                             onPhoto: () => _takeScreenshot(l10n),
                             onSettings: _openSettings,
                             onHistory: () => _comingSoon(l10n),
@@ -511,6 +549,8 @@ class _WeatherChip extends StatelessWidget {
 class _Toolbar extends StatelessWidget {
   const _Toolbar({
     required this.l10n,
+    required this.isRecording,
+    this.recordingLabel,
     required this.onRecord,
     required this.onPhoto,
     required this.onSettings,
@@ -518,6 +558,8 @@ class _Toolbar extends StatelessWidget {
   });
 
   final AppLocalizations l10n;
+  final bool isRecording;
+  final String? recordingLabel;
   final VoidCallback onRecord;
   final VoidCallback onPhoto;
   final VoidCallback onSettings;
@@ -535,8 +577,11 @@ class _Toolbar extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           _ToolbarButton(
-            icon: Icons.videocam,
-            label: l10n.toolbarRecord,
+            icon: isRecording ? Icons.stop_circle : Icons.videocam,
+            iconColor: isRecording ? const Color(0xFFFF5252) : Colors.white,
+            label: isRecording
+                ? (recordingLabel ?? l10n.toolbarRecord)
+                : l10n.toolbarRecord,
             onTap: onRecord,
           ),
           _ToolbarButton(
@@ -565,11 +610,13 @@ class _ToolbarButton extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    this.iconColor = Colors.white,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final Color iconColor;
 
   @override
   Widget build(BuildContext context) {
@@ -581,7 +628,7 @@ class _ToolbarButton extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: Colors.white, size: 24),
+            Icon(icon, color: iconColor, size: 24),
             const SizedBox(height: 2),
             Text(
               label,

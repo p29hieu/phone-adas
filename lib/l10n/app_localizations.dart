@@ -445,6 +445,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Off'**
   String get soundOff;
+
+  /// No description provided for @recSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Video saved to Photos'**
+  String get recSaved;
+
+  /// No description provided for @recFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the video'**
+  String get recFailed;
+
+  /// No description provided for @recNeedCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording needs the real camera'**
+  String get recNeedCamera;
+
+  /// No description provided for @recTestModeOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable test mode to record'**
+  String get recTestModeOnly;
 }
 
 class _AppLocalizationsDelegate

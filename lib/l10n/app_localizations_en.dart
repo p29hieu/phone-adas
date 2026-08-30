@@ -198,4 +198,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get soundOff => 'Off';
+
+  @override
+  String get recSaved => 'Video saved to Photos';
+
+  @override
+  String get recFailed => 'Could not save the video';
+
+  @override
+  String get recNeedCamera => 'Recording needs the real camera';
+
+  @override
+  String get recTestModeOnly => 'Enable test mode to record';
 }

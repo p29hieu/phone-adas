@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui' show Rect;
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:gal/gal.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../../app/app_bloc_observer.dart';
@@ -51,6 +53,33 @@ class HudCubit extends Cubit<HudState> {
   static const _weatherRefresh = Duration(minutes: 15);
   static const _geocodeMinInterval = Duration(minutes: 2);
   static const _geocodeMinMoveMeters = 1000.0;
+
+  /// Starts native video recording (test-mode "Quay"). Returns false when
+  /// no real camera is available.
+  Future<bool> startRecording() async {
+    final ok = await AdasChannel.startRecording();
+    if (ok) {
+      crashlyticsLog('HudCubit: recording started');
+      emit(state.copyWith(
+          isRecording: true, recordingStartedAt: DateTime.now()));
+    }
+    return ok;
+  }
+
+  /// Stops recording and moves the file into the photo library.
+  Future<bool> stopRecordingAndSave() async {
+    final path = await AdasChannel.stopRecording();
+    emit(state.copyWith(isRecording: false, recordingStartedAt: null));
+    crashlyticsLog('HudCubit: recording stopped (saved=${path != null})');
+    if (path == null) return false;
+    try {
+      await Gal.putVideo(path);
+      await File(path).delete();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 
   /// [level] 1-10 = displayed updates per second.
   void applyDisplaySensitivity(int level) {
@@ -242,6 +271,9 @@ class HudCubit extends Cubit<HudState> {
 
   @override
   Future<void> close() async {
+    if (state.isRecording) {
+      await stopRecordingAndSave();
+    }
     await _frameSub?.cancel();
     await _posSub?.cancel();
     _weatherTimer?.cancel();

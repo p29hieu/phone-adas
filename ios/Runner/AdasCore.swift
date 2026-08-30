@@ -86,6 +86,15 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
   private var mockTimer: Timer?
   private var mockPhase = 0.0
 
+  // Recording (test-mode "Quay"): writes the already-flowing camera buffers
+  // to an H.264 .mp4 via the hardware encoder. All state is touched on
+  // captureQueue only.
+  private var assetWriter: AVAssetWriter?
+  private var writerInput: AVAssetWriterInput?
+  private var pixelAdaptor: AVAssetWriterInputPixelBufferAdaptor?
+  private var recordingURL: URL?
+  private var wantRecording = false
+
   // MARK: - FlutterTexture
 
   func copyPixelBuffer() -> Unmanaged<CVPixelBuffer>? {
@@ -108,6 +117,31 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     case "beep":
       AudioServicesPlaySystemSound(1052)
       result(nil)
+    case "startRecording":
+      guard cameraAvailable else {
+        result(false)
+        return
+      }
+      captureQueue.async { self.wantRecording = true }
+      result(true)
+    case "stopRecording":
+      captureQueue.async {
+        self.wantRecording = false
+        guard let writer = self.assetWriter, let url = self.recordingURL else {
+          DispatchQueue.main.async { result(nil) }
+          return
+        }
+        self.writerInput?.markAsFinished()
+        self.assetWriter = nil
+        self.writerInput = nil
+        self.pixelAdaptor = nil
+        self.recordingURL = nil
+        writer.finishWriting {
+          DispatchQueue.main.async {
+            result(writer.status == .completed ? url.path : nil)
+          }
+        }
+      }
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -267,6 +301,10 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     bufferLock.unlock()
     textures.textureFrameAvailable(textureId)
 
+    if wantRecording {
+      appendRecordingFrame(pixelBuffer, sampleBuffer: sampleBuffer)
+    }
+
     if let attachment = CMGetAttachment(
       sampleBuffer,
       key: kCMSampleBufferAttachmentKey_CameraIntrinsicMatrix,
@@ -352,6 +390,48 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     }
   }
 
+
+  // MARK: - Recording
+
+  private func appendRecordingFrame(_ pixelBuffer: CVPixelBuffer,
+                                    sampleBuffer: CMSampleBuffer) {
+    let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+    if assetWriter == nil {
+      startWriter(
+        width: CVPixelBufferGetWidth(pixelBuffer),
+        height: CVPixelBufferGetHeight(pixelBuffer),
+        startPTS: pts
+      )
+    }
+    guard let input = writerInput, let adaptor = pixelAdaptor,
+          assetWriter?.status == .writing, input.isReadyForMoreMediaData
+    else { return }
+    adaptor.append(pixelBuffer, withPresentationTime: pts)
+  }
+
+  private func startWriter(width: Int, height: Int, startPTS: CMTime) {
+    let url = FileManager.default.temporaryDirectory
+      .appendingPathComponent(
+        "phone_adas_rec_\(Int(Date().timeIntervalSince1970)).mp4")
+    guard let writer = try? AVAssetWriter(outputURL: url, fileType: .mp4) else { return }
+    let settings: [String: Any] = [
+      AVVideoCodecKey: AVVideoCodecType.h264,
+      AVVideoWidthKey: width,
+      AVVideoHeightKey: height,
+    ]
+    let input = AVAssetWriterInput(mediaType: .video, outputSettings: settings)
+    input.expectsMediaDataInRealTime = true
+    let adaptor = AVAssetWriterInputPixelBufferAdaptor(
+      assetWriterInput: input, sourcePixelBufferAttributes: nil)
+    guard writer.canAdd(input) else { return }
+    writer.add(input)
+    guard writer.startWriting() else { return }
+    writer.startSession(atSourceTime: startPTS)
+    assetWriter = writer
+    writerInput = input
+    pixelAdaptor = adaptor
+    recordingURL = url
+  }
 
   // MARK: - Lane detection (test-mode, classic CV)
 

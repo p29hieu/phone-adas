@@ -195,4 +195,16 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get soundOff => 'Tắt';
+
+  @override
+  String get recSaved => 'Đã lưu video vào Ảnh';
+
+  @override
+  String get recFailed => 'Không lưu được video';
+
+  @override
+  String get recNeedCamera => 'Cần camera thật để quay';
+
+  @override
+  String get recTestModeOnly => 'Bật Chế độ thử nghiệm để quay';
 }

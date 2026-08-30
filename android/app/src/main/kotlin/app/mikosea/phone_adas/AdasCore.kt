@@ -59,6 +59,8 @@ object AdasCore {
                 when (call.method) {
                     "start" -> { start(); result.success(mapOf("textureId" to null)) }
                     "stop" -> { stop(); result.success(null) }
+                    "startRecording" -> result.success(false) // phase 3
+                    "stopRecording" -> result.success(null)
                     "beep" -> {
                         toneGenerator.startTone(ToneGenerator.TONE_PROP_BEEP2, 200)
                         result.success(null)
