@@ -156,8 +156,11 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
         self.configureSessionIfNeeded()
         if !self.session.isRunning { self.session.startRunning() }
         self.cameraRunning = true
+        // Orientation must be applied AFTER the connection exists. Doing it
+        // earlier silently no-ops, and under rotation lock no orientation
+        // event ever retries it — the stuck-sideways-preview bug.
+        DispatchQueue.main.async { self.applyOrientation() }
       }
-      DispatchQueue.main.async { self.applyOrientation() }
     }
   }
 

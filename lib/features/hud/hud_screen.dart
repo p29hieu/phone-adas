@@ -294,33 +294,47 @@ class _HudScreenState extends State<HudScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          crossAxisAlignment: WrapCrossAlignment.start,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _InfoCard(state: state, l10n: l10n, time: _time),
-                            if (state.mock)
-                              StatusBadge(
-                                l10n.mockModeBadge,
-                                background: Colors.orange.shade800,
-                              ),
-                            if (state.weather != null)
-                              _WeatherChip(
-                                icon: _weatherIcon(state.weather!.kind),
-                                label:
-                                    '${state.weather!.tempC.round()}°C'
-                                    '${state.weather!.isStale ? ' *' : ''}',
-                              ),
-                            if (context.watch<SettingsCubit>().state.devMode)
-                              _DevCountsChip(
-                                cars: state.vehicles
-                                    .where((v) => v.cls != 'motorcycle')
-                                    .length,
-                                motos: state.vehicles
-                                    .where((v) => v.cls == 'motorcycle')
-                                    .length,
-                              ),
+                            Flexible(
+                              child: _InfoCard(
+                                  state: state, l10n: l10n, time: _time),
+                            ),
+                            const SizedBox(width: 8),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                if (state.mock) ...[
+                                  StatusBadge(
+                                    l10n.mockModeBadge,
+                                    background: Colors.orange.shade800,
+                                  ),
+                                  const SizedBox(height: 6),
+                                ],
+                                if (state.weather != null) ...[
+                                  _WeatherChip(
+                                    icon: _weatherIcon(state.weather!.kind),
+                                    label:
+                                        '${state.weather!.tempC.round()}°C'
+                                        '${state.weather!.isStale ? ' *' : ''}',
+                                  ),
+                                  const SizedBox(height: 6),
+                                ],
+                                if (context
+                                    .watch<SettingsCubit>()
+                                    .state
+                                    .devMode)
+                                  _DevCountsChip(
+                                    cars: state.vehicles
+                                        .where((v) => v.cls != 'motorcycle')
+                                        .length,
+                                    motos: state.vehicles
+                                        .where((v) => v.cls == 'motorcycle')
+                                        .length,
+                                  ),
+                              ],
+                            ),
                           ],
                         ),
                         const Spacer(),
@@ -355,40 +369,45 @@ class _InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const labelStyle = TextStyle(color: Color(0xFF555555), fontSize: 13);
+    const labelStyle = TextStyle(color: Color(0xFF555555), fontSize: 11);
     const valueStyle = TextStyle(
       color: Color(0xFF1A1A1A),
-      fontSize: 16,
+      fontSize: 13,
       fontWeight: FontWeight.w600,
+      height: 1.25,
     );
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
           decoration: BoxDecoration(
             color: const Color(0xE6FFFFFF),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('Speed:', style: labelStyle),
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       HudNumeral(
                         state.speedKmh.toStringAsFixed(0),
-                        size: 34,
+                        size: 28,
                         color: const Color(0xFF1A1A1A),
                       ),
-                      const SizedBox(width: 4),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 3),
-                        child: Text(l10n.hudSpeedUnit, style: valueStyle),
+                      const SizedBox(width: 3),
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 2),
+                        child: Text('km/h', style: valueStyle),
                       ),
                     ],
                   ),
@@ -396,11 +415,12 @@ class _InfoCard extends StatelessWidget {
               ),
               Container(
                 width: 1,
-                height: 44,
-                margin: const EdgeInsets.symmetric(horizontal: 12),
+                height: 36,
+                margin: const EdgeInsets.symmetric(horizontal: 10),
                 color: const Color(0x33000000),
               ),
               Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('GPS:', style: labelStyle),
@@ -429,7 +449,7 @@ class _InfoCard extends StatelessWidget {
               time,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 15,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
                 shadows: [Shadow(blurRadius: 4, color: Colors.black)],
               ),
@@ -442,7 +462,7 @@ class _InfoCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Colors.white70,
-                    fontSize: 13,
+                    fontSize: 12,
                     shadows: [Shadow(blurRadius: 4, color: Colors.black)],
                   ),
                 ),
@@ -470,14 +490,15 @@ class _WeatherChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18, color: const Color(0xFF1A1A1A)),
+          Icon(icon, size: 16, color: const Color(0xFF1A1A1A)),
           const SizedBox(width: 5),
           Text(
             label,
             style: const TextStyle(
               color: Color(0xFF1A1A1A),
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
           ),
