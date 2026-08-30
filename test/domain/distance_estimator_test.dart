@@ -13,7 +13,61 @@ AdasFrame frame(List<Detection> ds) => AdasFrame(
       detections: ds,
     );
 
+LaneObservation laneObs() => const LaneObservation(
+      // Lane from (760,1080)-(880,626) to (1160,1080)-(1040,626).
+      left: LaneLine(760, 1080, 880, 626),
+      right: LaneLine(1160, 1080, 1040, 626),
+      offset: 0,
+      conf: 0.9,
+    );
+
+AdasFrame frameWithLane(List<Detection> ds) => AdasFrame(
+      ts: DateTime.utc(2026),
+      mock: true,
+      frameW: 1920,
+      frameH: 1080,
+      lane: laneObs(),
+      detections: ds,
+    );
+
 void main() {
+  test('LaneLine.xAt interpolates and extrapolates', () {
+    const line = LaneLine(760, 1080, 880, 626);
+    expect(line.xAt(1080), closeTo(760, 0.01));
+    expect(line.xAt(626), closeTo(880, 0.01));
+    expect(line.xAt(853), closeTo(820, 1)); // midpoint
+  });
+
+  test('with a detected lane, only in-lane vehicles are relevant', () {
+    final e = DistanceEstimator();
+    // In-lane car near center bottom; moto far left outside the lane.
+    final inLane = det('car', 960, 60);
+    final outside = det('motorcycle', 400, 120);
+    final relevant = e.relevantDetections(frameWithLane([inLane, outside]));
+    expect(relevant, [inLane]);
+    expect(e.pickLead(frameWithLane([inLane, outside])), inLane);
+  });
+
+  test('low-confidence lane falls back to the center band', () {
+    final e = DistanceEstimator();
+    final f = AdasFrame(
+      ts: DateTime.utc(2026),
+      mock: true,
+      frameW: 1920,
+      frameH: 1080,
+      lane: const LaneObservation(
+        left: LaneLine(760, 1080, 880, 626),
+        right: LaneLine(1160, 1080, 1040, 626),
+        offset: 0,
+        conf: 0.2,
+      ),
+      detections: [det('car', 960, 60), det('car', 200, 90)],
+    );
+    final relevant = e.relevantDetections(f);
+    expect(relevant.length, 1);
+    expect(relevant.single.w, 60);
+  });
+
   test('pinhole math: 49 px car at f=1500 is about 55 m', () {
     final e = DistanceEstimator(fPx: 1500);
     final d = e.estimate(det('car', 960, 49));

@@ -457,10 +457,10 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     let ptr = base.assumingMemoryBound(to: UInt8.self)
 
     let scale = Double(w) / 1920.0
-    // Stop above the hood: dashboard reflections at the bottom edge produce
-    // strong fake edges (mounting guide keeps the hood under ~10%).
-    let yTop = Int(Double(h) * 0.56)
-    let yBot = Int(Double(h) * 0.90)
+    // Stop above the hood/dashboard: real mounts show the dash from ~78%
+    // down, and its reflections fit as fake splayed lane lines.
+    let yTop = Int(Double(h) * 0.58)
+    let yBot = Int(Double(h) * 0.80)
     let xMid = w / 2
     let xSpan = Int(Double(w) * 0.45)
     let stepY = max(1, (yBot - yTop) / 26)
@@ -530,8 +530,24 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     let yB = Double(yBot), yT = Double(yTop)
     let xlB = l.a * yB + l.b, xrB = r.a * yB + r.b
     let laneWidth = xrB - xlB
-    guard laneWidth > Double(w) * 0.16, laneWidth < Double(w) * 0.70,
+
+    // Geometry gates a REAL ego lane must satisfy; anything else (dashboard
+    // reflections, curbs, road edges) is dropped rather than drawn wrong:
+    // 1. plausible width at the scan floor (a 3.5 m lane spans ~25-35% of
+    //    the frame there — the dashboard fit spanned ~75%);
+    // 2. the two lines converge: left leans right going up, right leans left;
+    // 3. their intersection (vanishing point) sits near the horizon band;
+    // 4. the lane center at the bottom is near the image center.
+    guard laneWidth > Double(w) * 0.16, laneWidth < Double(w) * 0.45,
           xlB < Double(xMid), xrB > Double(xMid)
+    else { return laneMiss() }
+    guard l.a < -0.05, r.a > 0.05 else { return laneMiss() }
+    let slopeDenom = l.a - r.a
+    guard abs(slopeDenom) > 1e-6 else { return laneMiss() }
+    let vanishY = (r.b - l.b) / slopeDenom
+    guard vanishY > Double(h) * 0.25, vanishY < Double(h) * 0.65
+    else { return laneMiss() }
+    guard abs((xlB + xrB) / 2 - Double(xMid)) < Double(w) * 0.18
     else { return laneMiss() }
 
     prevLeftFit = l

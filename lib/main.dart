@@ -61,10 +61,18 @@ class _PhoneAdasAppState extends State<PhoneAdasApp> {
         BlocProvider(create: (_) => HudCubit()..start()),
       ],
       child: BlocListener<SettingsCubit, SettingsState>(
-        listenWhen: (prev, next) => prev.sensitivity != next.sensitivity,
-        listener: (context, settings) => context
-            .read<HudCubit>()
-            .applyDisplaySensitivity(settings.sensitivity),
+        listenWhen: (prev, next) =>
+            prev.sensitivity != next.sensitivity ||
+            prev.testMode != next.testMode,
+        listener: (context, settings) {
+          final hud = context.read<HudCubit>();
+          hud.applyDisplaySensitivity(settings.sensitivity);
+          if (!settings.testMode) {
+            // A simulated speed must never drive the legal-gap logic
+            // outside test mode.
+            hud.setSpeedOverride(null);
+          }
+        },
         child: Builder(
         builder: (context) {
           final settings = context.watch<SettingsCubit>().state;

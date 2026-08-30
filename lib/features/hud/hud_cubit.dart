@@ -126,9 +126,20 @@ class HudCubit extends Cubit<HudState> {
     final lead = _estimator.pickLead(frame);
     final distance = lead == null ? null : _estimator.estimate(lead);
 
-    final vehicles = <TrackedVehicle>[];
+    // Overlay + alerts see only relevant vehicles (in-lane when a lane is
+    // detected, central band otherwise); the dev chip counts everything.
+    var rawCars = 0;
+    var rawMotos = 0;
     for (final d in frame.detections) {
       if (d.conf < DistanceEstimator.minConfidence) continue;
+      if (d.cls == 'motorcycle') {
+        rawMotos++;
+      } else if (DistanceEstimator.realWidthM.containsKey(d.cls)) {
+        rawCars++;
+      }
+    }
+    final vehicles = <TrackedVehicle>[];
+    for (final d in _estimator.relevantDetections(frame)) {
       final dist = _estimator.estimate(d);
       if (dist == null) continue;
       vehicles.add(TrackedVehicle(
@@ -192,11 +203,30 @@ class HudCubit extends Cubit<HudState> {
       lane: frame.lane,
       laneStatus: _laneMonitor.status,
       laneEventCount: laneFired ? state.laneEventCount + 1 : null,
+      detectedCars: rawCars,
+      detectedMotos: rawMotos,
+    ));
+  }
+
+  /// Test-mode manual speed (0-130 km/h); null returns control to GPS.
+  void setSpeedOverride(double? kmh) {
+    crashlyticsLog(
+        'HudCubit: speed override ${kmh?.toStringAsFixed(0) ?? 'off'}');
+    if (kmh == null) {
+      emit(state.copyWith(speedOverrideKmh: null));
+      return;
+    }
+    final clamped = kmh.clamp(0.0, 130.0);
+    emit(state.copyWith(
+      speedOverrideKmh: clamped,
+      speedKmh: clamped,
+      requiredGapM: SafeDistance.legalMinimumMeters(clamped),
     ));
   }
 
   void _onPosition(Position pos) {
-    final speedKmh = pos.speed < 0 ? 0.0 : pos.speed * 3.6;
+    final speedKmh = state.speedOverrideKmh ??
+        (pos.speed < 0 ? 0.0 : pos.speed * 3.6);
     final isDay = Solar.isDaytime(
       DateTime.now().toUtc(),
       pos.latitude,

@@ -35,15 +35,46 @@ class DistanceEstimator {
     return w * fPx / d.w * scale;
   }
 
-  /// v1 lead-vehicle pick: nearest (widest bbox) vehicle whose horizontal
-  /// center lies within the central lane band. Lane detection replaces this
-  /// in a later phase.
+  /// Minimum lane confidence before the detected lane replaces the
+  /// center band as the relevance filter.
+  static const double laneMinConf = 0.45;
+
+  /// Extra tolerance around the lane, as a fraction of the lane width.
+  static const double laneMarginRatio = 0.10;
+
+  /// Vehicles that matter: inside the detected ego lane when one is
+  /// available, otherwise within the central band of the frame. Everything
+  /// else (parked cars, opposing traffic at the frame edges) is ignored by
+  /// the overlay and the alert pipeline.
+  List<Detection> relevantDetections(AdasFrame f) {
+    final lane = f.lane;
+    final useLane = lane != null && lane.conf >= laneMinConf;
+    bool inside(Detection d) {
+      final cx = d.x + d.w / 2;
+      if (useLane) {
+        final yBottom = d.y + d.h;
+        final xl = lane.left.xAt(yBottom);
+        final xr = lane.right.xAt(yBottom);
+        if (xr <= xl) return false;
+        final margin = (xr - xl) * laneMarginRatio;
+        return cx >= xl - margin && cx <= xr + margin;
+      }
+      return (cx - f.frameW / 2).abs() <= f.frameW * laneBandHalfWidth;
+    }
+
+    return [
+      for (final d in f.detections)
+        if (realWidthM.containsKey(d.cls) &&
+            d.conf >= minConfidence &&
+            inside(d))
+          d,
+    ];
+  }
+
+  /// Lead vehicle: the nearest (widest bbox) relevant detection.
   Detection? pickLead(AdasFrame f) {
     Detection? best;
-    for (final d in f.detections) {
-      if (!realWidthM.containsKey(d.cls) || d.conf < minConfidence) continue;
-      final cx = d.x + d.w / 2;
-      if ((cx - f.frameW / 2).abs() > f.frameW * laneBandHalfWidth) continue;
+    for (final d in relevantDetections(f)) {
       if (best == null || d.w > best.w) best = d;
     }
     return best;

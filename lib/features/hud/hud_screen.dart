@@ -314,6 +314,13 @@ class _HudScreenState extends State<HudScreen> {
                   color: const Color(0xFFE53935),
                   period: const Duration(seconds: 2),
                 ),
+                if (context.watch<SettingsCubit>().state.testMode)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: SafeArea(
+                      child: _SpeedOverridePanel(state: state),
+                    ),
+                  ),
                 SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.all(12),
@@ -359,12 +366,8 @@ class _HudScreenState extends State<HudScreen> {
                                     .state
                                     .devMode)
                                   _DevCountsChip(
-                                    cars: state.vehicles
-                                        .where((v) => v.cls != 'motorcycle')
-                                        .length,
-                                    motos: state.vehicles
-                                        .where((v) => v.cls == 'motorcycle')
-                                        .length,
+                                    cars: state.detectedCars,
+                                    motos: state.detectedMotos,
                                   ),
                               ],
                             ),
@@ -636,6 +639,64 @@ class _ToolbarButton extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Test-mode vertical slider simulating the ego speed (0-130 km/h) so the
+/// alert pipeline can be exercised against recorded videos on a screen.
+class _SpeedOverridePanel extends StatelessWidget {
+  const _SpeedOverridePanel({required this.state});
+
+  final HudState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final cubit = context.read<HudCubit>();
+    final overriding = state.speedOverrideKmh != null;
+    return Container(
+      margin: const EdgeInsets.only(right: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0x99000000),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '${(state.speedOverrideKmh ?? state.speedKmh).round()}',
+            style: TextStyle(
+              color: overriding ? Colors.amber : Colors.white70,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          SizedBox(
+            height: 170,
+            child: RotatedBox(
+              quarterTurns: -1,
+              child: Slider(
+                value: (state.speedOverrideKmh ?? state.speedKmh)
+                    .clamp(0.0, 130.0),
+                min: 0,
+                max: 130,
+                activeColor: overriding ? Colors.amber : Colors.white38,
+                onChanged: (v) => cubit.setSpeedOverride(v),
+              ),
+            ),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: const Size(44, 26),
+              foregroundColor: overriding ? Colors.white : Colors.white38,
+            ),
+            onPressed: overriding ? () => cubit.setSpeedOverride(null) : null,
+            child: const Text('GPS', style: TextStyle(fontSize: 12)),
+          ),
+        ],
       ),
     );
   }

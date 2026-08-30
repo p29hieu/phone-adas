@@ -36,6 +36,12 @@ class LaneLine {
 
   final double x0, y0, x1, y1;
 
+  /// X of this boundary at row [y] (linear, extrapolates beyond endpoints).
+  double xAt(double y) {
+    if ((y1 - y0).abs() < 1e-6) return x0;
+    return x0 + (x1 - x0) * (y - y0) / (y1 - y0);
+  }
+
   factory LaneLine.fromList(List<dynamic> v) => LaneLine(
         (v[0] as num).toDouble(),
         (v[1] as num).toDouble(),

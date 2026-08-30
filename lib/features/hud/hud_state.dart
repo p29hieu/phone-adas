@@ -47,6 +47,9 @@ class HudState extends Equatable {
     this.laneStatus = LaneStatus.unknown,
     this.laneEventCount = 0,
     this.speedKmh = 0,
+    this.speedOverrideKmh,
+    this.detectedCars = 0,
+    this.detectedMotos = 0,
     this.lat,
     this.lon,
     this.areaName,
@@ -82,6 +85,14 @@ class HudState extends Equatable {
   /// Increments once per lane-departure event (test-mode warning).
   final int laneEventCount;
   final double speedKmh;
+
+  /// Test-mode manual speed (null = GPS drives the speed).
+  final double? speedOverrideKmh;
+
+  /// Raw recognition counts (all confident detections, pre lane filter) —
+  /// what the dev-mode chip shows.
+  final int detectedCars;
+  final int detectedMotos;
   final double? lat;
   final double? lon;
   final String? areaName;
@@ -107,6 +118,9 @@ class HudState extends Equatable {
     LaneStatus? laneStatus,
     int? laneEventCount,
     double? speedKmh,
+    Object? speedOverrideKmh = _unset,
+    int? detectedCars,
+    int? detectedMotos,
     double? lat,
     double? lon,
     String? areaName,
@@ -132,6 +146,11 @@ class HudState extends Equatable {
         laneStatus: laneStatus ?? this.laneStatus,
         laneEventCount: laneEventCount ?? this.laneEventCount,
         speedKmh: speedKmh ?? this.speedKmh,
+        speedOverrideKmh: identical(speedOverrideKmh, _unset)
+            ? this.speedOverrideKmh
+            : speedOverrideKmh as double?,
+        detectedCars: detectedCars ?? this.detectedCars,
+        detectedMotos: detectedMotos ?? this.detectedMotos,
         lat: lat ?? this.lat,
         lon: lon ?? this.lon,
         areaName: areaName ?? this.areaName,
@@ -160,6 +179,9 @@ class HudState extends Equatable {
         laneStatus,
         laneEventCount,
         speedKmh,
+        speedOverrideKmh,
+        detectedCars,
+        detectedMotos,
         lat,
         lon,
         areaName,
