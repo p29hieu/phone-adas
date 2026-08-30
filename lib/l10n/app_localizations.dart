@@ -469,6 +469,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enable test mode to record'**
   String get recTestModeOnly;
+
+  /// No description provided for @settingsShowLane.
+  ///
+  /// In en, this message translates to:
+  /// **'Show lane overlay'**
+  String get settingsShowLane;
+
+  /// No description provided for @settingsManualSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual speed control'**
+  String get settingsManualSpeed;
 }
 
 class _AppLocalizationsDelegate

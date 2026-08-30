@@ -99,5 +99,7 @@
   "recSaved": "Video saved to Photos",
   "recFailed": "Could not save the video",
   "recNeedCamera": "Recording needs the real camera",
-  "recTestModeOnly": "Enable test mode to record"
+  "recTestModeOnly": "Enable test mode to record",
+  "settingsShowLane": "Show lane overlay",
+  "settingsManualSpeed": "Manual speed control"
 }

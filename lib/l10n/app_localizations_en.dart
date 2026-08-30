@@ -210,4 +210,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get recTestModeOnly => 'Enable test mode to record';
+
+  @override
+  String get settingsShowLane => 'Show lane overlay';
+
+  @override
+  String get settingsManualSpeed => 'Manual speed control';
 }

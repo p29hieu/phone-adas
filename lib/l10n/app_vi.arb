@@ -61,5 +61,7 @@
   "recSaved": "Đã lưu video vào Ảnh",
   "recFailed": "Không lưu được video",
   "recNeedCamera": "Cần camera thật để quay",
-  "recTestModeOnly": "Bật Chế độ thử nghiệm để quay"
+  "recTestModeOnly": "Bật Chế độ thử nghiệm để quay",
+  "settingsShowLane": "Hiển thị làn đường",
+  "settingsManualSpeed": "Điều chỉnh tốc độ bằng tay"
 }

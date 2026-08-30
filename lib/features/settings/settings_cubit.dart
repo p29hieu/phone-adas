@@ -26,6 +26,8 @@ class SettingsState extends Equatable {
     this.soundCollision = AlertSound.voice,
     this.soundLane = AlertSound.voice,
     this.soundGap = AlertSound.voice,
+    this.showLane = true,
+    this.manualSpeed = true,
     this.loaded = false,
   });
 
@@ -46,6 +48,12 @@ class SettingsState extends Equatable {
   final AlertSound soundCollision;
   final AlertSound soundLane;
   final AlertSound soundGap;
+
+  /// Test-mode sub-feature: lane overlay + lane-departure warning.
+  final bool showLane;
+
+  /// Test-mode sub-feature: manual speed slider.
+  final bool manualSpeed;
   final bool loaded;
 
   AlertSound soundFor(AlertKind kind) => switch (kind) {
@@ -79,6 +87,8 @@ class SettingsState extends Equatable {
     AlertSound? soundCollision,
     AlertSound? soundLane,
     AlertSound? soundGap,
+    bool? showLane,
+    bool? manualSpeed,
     bool? loaded,
   }) =>
       SettingsState(
@@ -91,6 +101,8 @@ class SettingsState extends Equatable {
         soundCollision: soundCollision ?? this.soundCollision,
         soundLane: soundLane ?? this.soundLane,
         soundGap: soundGap ?? this.soundGap,
+        showLane: showLane ?? this.showLane,
+        manualSpeed: manualSpeed ?? this.manualSpeed,
         loaded: loaded ?? this.loaded,
       );
 
@@ -105,6 +117,8 @@ class SettingsState extends Equatable {
         soundCollision,
         soundLane,
         soundGap,
+        showLane,
+        manualSpeed,
         loaded,
       ];
 }
@@ -118,6 +132,8 @@ class SettingsCubit extends Cubit<SettingsState> {
   static const _kDevMode = 'settings_dev_mode_v1';
   static const _kTestMode = 'settings_test_mode_v1';
   static const _kSoundPrefix = 'settings_alert_sound_v1_';
+  static const _kShowLane = 'settings_show_lane_v1';
+  static const _kManualSpeed = 'settings_manual_speed_v1';
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -131,6 +147,8 @@ class SettingsCubit extends Cubit<SettingsState> {
       soundCollision: _loadSound(prefs, AlertKind.collision),
       soundLane: _loadSound(prefs, AlertKind.lane),
       soundGap: _loadSound(prefs, AlertKind.gap),
+      showLane: prefs.getBool(_kShowLane) ?? true,
+      manualSpeed: prefs.getBool(_kManualSpeed) ?? true,
       loaded: true,
     ));
   }
@@ -174,6 +192,18 @@ class SettingsCubit extends Cubit<SettingsState> {
     });
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('$_kSoundPrefix${kind.name}', sound.index);
+  }
+
+  Future<void> setShowLane(bool on) async {
+    emit(state.copyWith(showLane: on));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kShowLane, on);
+  }
+
+  Future<void> setManualSpeed(bool on) async {
+    emit(state.copyWith(manualSpeed: on));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kManualSpeed, on);
   }
 
   Future<void> setTestMode(bool on) async {

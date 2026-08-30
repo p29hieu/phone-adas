@@ -207,4 +207,10 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get recTestModeOnly => 'Bật Chế độ thử nghiệm để quay';
+
+  @override
+  String get settingsShowLane => 'Hiển thị làn đường';
+
+  @override
+  String get settingsManualSpeed => 'Điều chỉnh tốc độ bằng tay';
 }

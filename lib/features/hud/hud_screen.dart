@@ -225,7 +225,8 @@ class _HudScreenState extends State<HudScreen> {
           }
           if (state.laneEventCount > _seenLaneEvents) {
             _seenLaneEvents = state.laneEventCount;
-            if (context.read<SettingsCubit>().state.testMode) {
+            final settings = context.read<SettingsCubit>().state;
+            if (settings.testMode && settings.showLane) {
               _notify(AlertKind.lane, l10n.warnLaneDeparture);
             }
           }
@@ -294,6 +295,7 @@ class _HudScreenState extends State<HudScreen> {
                   ),
                 ),
                 if (context.watch<SettingsCubit>().state.testMode &&
+                    context.watch<SettingsCubit>().state.showLane &&
                     state.lane != null)
                   LaneOverlay(
                     lane: state.lane!,
@@ -314,9 +316,10 @@ class _HudScreenState extends State<HudScreen> {
                   color: const Color(0xFFE53935),
                   period: const Duration(seconds: 2),
                 ),
-                if (context.watch<SettingsCubit>().state.testMode)
+                if (context.watch<SettingsCubit>().state.testMode &&
+                    context.watch<SettingsCubit>().state.manualSpeed)
                   Align(
-                    alignment: Alignment.centerRight,
+                    alignment: Alignment.centerLeft,
                     child: SafeArea(
                       child: _SpeedOverridePanel(state: state),
                     ),
@@ -656,11 +659,12 @@ class _SpeedOverridePanel extends StatelessWidget {
     final cubit = context.read<HudCubit>();
     final overriding = state.speedOverrideKmh != null;
     return Container(
-      margin: const EdgeInsets.only(right: 4),
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      margin: const EdgeInsets.only(left: 2),
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      width: 40,
       decoration: BoxDecoration(
-        color: const Color(0x99000000),
-        borderRadius: BorderRadius.circular(12),
+        color: const Color(0x80000000),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -669,32 +673,42 @@ class _SpeedOverridePanel extends StatelessWidget {
             '${(state.speedOverrideKmh ?? state.speedKmh).round()}',
             style: TextStyle(
               color: overriding ? Colors.amber : Colors.white70,
-              fontSize: 14,
+              fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
           ),
           SizedBox(
-            height: 170,
+            height: 120,
+            width: 32,
             child: RotatedBox(
               quarterTurns: -1,
-              child: Slider(
-                value: (state.speedOverrideKmh ?? state.speedKmh)
-                    .clamp(0.0, 130.0),
-                min: 0,
-                max: 130,
-                activeColor: overriding ? Colors.amber : Colors.white38,
-                onChanged: (v) => cubit.setSpeedOverride(v),
+              child: SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  trackHeight: 2,
+                  thumbShape:
+                      const RoundSliderThumbShape(enabledThumbRadius: 7),
+                  overlayShape:
+                      const RoundSliderOverlayShape(overlayRadius: 12),
+                ),
+                child: Slider(
+                  value: (state.speedOverrideKmh ?? state.speedKmh)
+                      .clamp(0.0, 130.0),
+                  min: 0,
+                  max: 130,
+                  activeColor: overriding ? Colors.amber : Colors.white38,
+                  onChanged: (v) => cubit.setSpeedOverride(v),
+                ),
               ),
             ),
           ),
           TextButton(
             style: TextButton.styleFrom(
               padding: EdgeInsets.zero,
-              minimumSize: const Size(44, 26),
+              minimumSize: const Size(36, 22),
               foregroundColor: overriding ? Colors.white : Colors.white38,
             ),
             onPressed: overriding ? () => cubit.setSpeedOverride(null) : null,
-            child: const Text('GPS', style: TextStyle(fontSize: 12)),
+            child: const Text('GPS', style: TextStyle(fontSize: 10)),
           ),
         ],
       ),
@@ -849,6 +863,22 @@ class _SettingsSheet extends StatelessWidget {
                 title: Text(l10n.settingsTestMode),
                 onChanged: cubit.setTestMode,
               ),
+              if (settings.testMode) ...[
+                SwitchListTile(
+                  contentPadding: const EdgeInsets.only(left: 24),
+                  dense: true,
+                  value: settings.showLane,
+                  title: Text(l10n.settingsShowLane),
+                  onChanged: cubit.setShowLane,
+                ),
+                SwitchListTile(
+                  contentPadding: const EdgeInsets.only(left: 24),
+                  dense: true,
+                  value: settings.manualSpeed,
+                  title: Text(l10n.settingsManualSpeed),
+                  onChanged: cubit.setManualSpeed,
+                ),
+              ],
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 value: settings.devMode,

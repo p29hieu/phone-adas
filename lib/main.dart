@@ -63,13 +63,14 @@ class _PhoneAdasAppState extends State<PhoneAdasApp> {
       child: BlocListener<SettingsCubit, SettingsState>(
         listenWhen: (prev, next) =>
             prev.sensitivity != next.sensitivity ||
-            prev.testMode != next.testMode,
+            prev.testMode != next.testMode ||
+            prev.manualSpeed != next.manualSpeed,
         listener: (context, settings) {
           final hud = context.read<HudCubit>();
           hud.applyDisplaySensitivity(settings.sensitivity);
-          if (!settings.testMode) {
-            // A simulated speed must never drive the legal-gap logic
-            // outside test mode.
+          if (!settings.testMode || !settings.manualSpeed) {
+            // A simulated speed must never drive the legal-gap logic when
+            // its control surface is not available.
             hud.setSpeedOverride(null);
           }
         },
