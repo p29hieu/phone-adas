@@ -381,6 +381,9 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     if let lane = detectLane(in: pixelBuffer, excluding: vehicleBoxes) {
       frame["lane"] = lane
     }
+    if !lastLaneDbg.isEmpty {
+      frame["laneDbg"] = lastLaneDbg
+    }
     emit(frame)
   }
 
@@ -439,6 +442,10 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
   private var prevRightFit: (a: Double, b: Double)?
   private var laneMissCount = 0
 
+  /// Why the last lane attempt succeeded/failed — surfaced to the dev-mode
+  /// chip so field failures are diagnosable from a screenshot.
+  private var lastLaneDbg: [String: Any] = [:]
+
   /// Finds the ego-lane boundaries as painted STRIPES: a candidate pixel
   /// must be brighter than BOTH sides (top-hat test), so curbs, medians and
   /// shadow edges — which only contrast on one side — cannot win. Per row
@@ -450,7 +457,7 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
                           excluding boxes: [CGRect]) -> [String: Any]? {
     CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
     defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
-    guard let base = CVPixelBufferGetBaseAddress(pixelBuffer) else { return laneMiss() }
+    guard let base = CVPixelBufferGetBaseAddress(pixelBuffer) else { return laneMiss("buf", 0, 0) }
     let w = CVPixelBufferGetWidth(pixelBuffer)
     let h = CVPixelBufferGetHeight(pixelBuffer)
     let rowStride = CVPixelBufferGetBytesPerRow(pixelBuffer)
@@ -474,7 +481,14 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     while y < yBot {
       scannedRows += 1
       let row = ptr + y * rowStride
-      func lum(_ x: Int) -> Int { Int(row[x * 4 + 1]) }
+      func lum(_ x: Int) -> Int {
+        // 3-tap horizontal average: damps moire noise from re-photographed
+        // screens and sensor grain without blurring stripes away.
+        let g0 = Int(row[max(0, x - 2) * 4 + 1])
+        let g1 = Int(row[x * 4 + 1])
+        let g2 = Int(row[min(w - 1, x + 2) * 4 + 1])
+        return (g0 + g1 + g2) / 3
+      }
       // Expected stripe half-width grows toward the camera (perspective).
       let t = Double(y - yTop) / Double(max(1, yBot - yTop))
       let off = max(3, Int((6 + 16 * t) * scale))
@@ -538,16 +552,32 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
       y += stepY
     }
 
-    guard leftPts.count >= 6, rightPts.count >= 6,
-          var l = Self.fitLineTrimmed(leftPts),
-          var r = Self.fitLineTrimmed(rightPts)
-    else { return laneMiss() }
+    let yB = Double(yBot), yT = Double(yTop)
+    var lFitOpt = leftPts.count >= 6 ? Self.fitLineTrimmed(leftPts) : nil
+    var rFitOpt = rightPts.count >= 6 ? Self.fitLineTrimmed(rightPts) : nil
+    var oneSided = false
+
+    // One-sided rescue: VN curb lanes often have paint on ONE side only
+    // (the other boundary is a bare curb). With a strong single line,
+    // coast the missing side from tracking, or synthesize it from a
+    // standard-lane-width prior converging at the horizon.
+    if lFitOpt == nil, let rFit = rFitOpt, rightPts.count >= 8 {
+      lFitOpt = prevLeftFit ??
+        Self.offsetLine(from: rFit, w: w, h: h, yB: yB, yT: yT, toLeft: true)
+      oneSided = true
+    } else if rFitOpt == nil, let lFit = lFitOpt, leftPts.count >= 8 {
+      rFitOpt = prevRightFit ??
+        Self.offsetLine(from: lFit, w: w, h: h, yB: yB, yT: yT, toLeft: false)
+      oneSided = true
+    }
+    guard var l = lFitOpt, var r = rFitOpt else {
+      return laneMiss("hits", leftPts.count, rightPts.count)
+    }
 
     // Temporal smoothing: lane geometry changes slowly at 10 Hz.
     if let p = prevLeftFit { l = (a: p.a * 0.6 + l.a * 0.4, b: p.b * 0.6 + l.b * 0.4) }
     if let p = prevRightFit { r = (a: p.a * 0.6 + r.a * 0.4, b: p.b * 0.6 + r.b * 0.4) }
 
-    let yB = Double(yBot), yT = Double(yTop)
     let xlB = l.a * yB + l.b, xrB = r.a * yB + r.b
     let laneWidth = xrB - xlB
 
@@ -560,15 +590,19 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     // 4. the lane center at the bottom is near the image center.
     guard laneWidth > Double(w) * 0.16, laneWidth < Double(w) * 0.45,
           xlB < Double(xMid), xrB > Double(xMid)
-    else { return laneMiss() }
-    guard l.a < -0.05, r.a > 0.05 else { return laneMiss() }
+    else { return laneMiss("width", leftPts.count, rightPts.count) }
+    guard l.a < -0.05, r.a > 0.05 else {
+      return laneMiss("slope", leftPts.count, rightPts.count)
+    }
     let slopeDenom = l.a - r.a
-    guard abs(slopeDenom) > 1e-6 else { return laneMiss() }
+    guard abs(slopeDenom) > 1e-6 else {
+      return laneMiss("slope", leftPts.count, rightPts.count)
+    }
     let vanishY = (r.b - l.b) / slopeDenom
     guard vanishY > Double(h) * 0.25, vanishY < Double(h) * 0.65
-    else { return laneMiss() }
+    else { return laneMiss("vanish", leftPts.count, rightPts.count) }
     guard abs((xlB + xrB) / 2 - Double(xMid)) < Double(w) * 0.18
-    else { return laneMiss() }
+    else { return laneMiss("center", leftPts.count, rightPts.count) }
 
     prevLeftFit = l
     prevRightFit = r
@@ -576,7 +610,17 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
 
     let center = (xlB + xrB) / 2
     let offset = (Double(xMid) - center) / (laneWidth / 2)
-    let conf = Double(min(leftPts.count, rightPts.count)) / Double(max(1, scannedRows))
+    var conf = Double(max(leftPts.count, rightPts.count)) / Double(max(1, scannedRows))
+    if !oneSided {
+      conf = Double(min(leftPts.count, rightPts.count)) / Double(max(1, scannedRows))
+    } else {
+      conf = min(conf, 0.5)
+    }
+    lastLaneDbg = [
+      "l": leftPts.count,
+      "r": rightPts.count,
+      "gate": oneSided ? "one-side" : "ok",
+    ]
     return [
       "left": [xlB, yB, l.a * yT + l.b, yT],
       "right": [xrB, yB, r.a * yT + r.b, yT],
@@ -587,13 +631,31 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
 
   /// Records a miss; tracking state survives short dropouts (dashed lines,
   /// crossings) and resets after ~1.2 s without a lane.
-  private func laneMiss() -> [String: Any]? {
+  private func laneMiss(_ gate: String, _ hitsL: Int, _ hitsR: Int) -> [String: Any]? {
     laneMissCount += 1
     if laneMissCount > 12 {
       prevLeftFit = nil
       prevRightFit = nil
     }
+    lastLaneDbg = ["l": hitsL, "r": hitsR, "gate": gate]
     return nil
+  }
+
+  /// Synthesizes the missing lane boundary from the found one, offset by a
+  /// standard-lane-width prior that converges toward the horizon (~0.45h).
+  private static func offsetLine(from fit: (a: Double, b: Double),
+                                 w: Int, h: Int, yB: Double, yT: Double,
+                                 toLeft: Bool) -> (a: Double, b: Double) {
+    let yV = Double(h) * 0.45
+    func width(_ y: Double) -> Double {
+      let frac = max(0.05, (y - yV) / max(1, yB - yV))
+      return 0.30 * Double(w) * frac
+    }
+    let sign = toLeft ? -1.0 : 1.0
+    let xB = fit.a * yB + fit.b + sign * width(yB)
+    let xT = fit.a * yT + fit.b + sign * width(yT)
+    let a = (xB - xT) / (yB - yT)
+    return (a: a, b: xB - a * yB)
   }
 
   /// Least-squares fit of x = a*y + b with one MAD-based trimming round.

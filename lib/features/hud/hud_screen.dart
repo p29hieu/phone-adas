@@ -123,6 +123,45 @@ class _HudScreenState extends State<HudScreen> {
       state.lane != null &&
       state.lane!.conf >= DistanceEstimator.laneMinConf;
 
+  Widget _recordButton(AppLocalizations l10n, HudState state) =>
+      _ToolbarButton(
+        icon: state.isRecording ? Icons.stop_circle : Icons.videocam,
+        iconColor:
+            state.isRecording ? const Color(0xFFFF5252) : Colors.white,
+        label: state.isRecording
+            ? (state.recordingStartedAt == null
+                ? l10n.toolbarRecord
+                : _fmtElapsed(
+                    DateTime.now().difference(state.recordingStartedAt!)))
+            : l10n.toolbarRecord,
+        onTap: () => _toggleRecording(l10n),
+      );
+
+  Widget _photoButton(AppLocalizations l10n) => _ToolbarButton(
+        icon: Icons.photo_camera,
+        label: l10n.toolbarPhoto,
+        onTap: () => _takeScreenshot(l10n),
+      );
+
+  Widget _settingsButton(AppLocalizations l10n) => _ToolbarButton(
+        icon: Icons.settings,
+        label: l10n.toolbarSettings,
+        onTap: _openSettings,
+      );
+
+  Widget _historyButton(AppLocalizations l10n) => _ToolbarButton(
+        icon: Icons.history,
+        label: l10n.toolbarHistory,
+        onTap: () => _comingSoon(l10n),
+      );
+
+  List<Widget> _allButtons(AppLocalizations l10n, HudState state) => [
+        _recordButton(l10n, state),
+        _photoButton(l10n),
+        _settingsButton(l10n),
+        _historyButton(l10n),
+      ];
+
   static String _fmtElapsed(Duration d) {
     final m = d.inMinutes.toString().padLeft(2, '0');
     final s = (d.inSeconds % 60).toString().padLeft(2, '0');
@@ -222,6 +261,8 @@ class _HudScreenState extends State<HudScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final screen = MediaQuery.sizeOf(context);
+    final isLandscape = screen.width > screen.height;
     return Scaffold(
       backgroundColor: Colors.black,
       body: BlocConsumer<HudCubit, HudState>(
@@ -387,6 +428,7 @@ class _HudScreenState extends State<HudScreen> {
                                   _DevCountsChip(
                                     cars: state.detectedCars,
                                     motos: state.detectedMotos,
+                                    laneDebug: state.laneDebug,
                                   ),
                               ],
                             ),
@@ -401,25 +443,51 @@ class _HudScreenState extends State<HudScreen> {
                             color: _alertColor(state),
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Center(
-                          child: _Toolbar(
-                            l10n: l10n,
-                            isRecording: state.isRecording,
-                            recordingLabel: state.recordingStartedAt == null
-                                ? null
-                                : _fmtElapsed(DateTime.now().difference(
-                                    state.recordingStartedAt!)),
-                            onRecord: () => _toggleRecording(l10n),
-                            onPhoto: () => _takeScreenshot(l10n),
-                            onSettings: _openSettings,
-                            onHistory: () => _comingSoon(l10n),
+                        if (!isLandscape) ...[
+                          const SizedBox(height: 8),
+                          Center(
+                            child: _ButtonPill(
+                              vertical: false,
+                              children: _allButtons(l10n, state),
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
                 ),
+                if (isLandscape) ...[
+                  Align(
+                    alignment: Alignment.bottomLeft,
+                    child: SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 8, bottom: 8),
+                        child: _ButtonPill(
+                          vertical: true,
+                          children: [
+                            _recordButton(l10n, state),
+                            _photoButton(l10n),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 8, bottom: 8),
+                        child: _ButtonPill(
+                          vertical: true,
+                          children: [
+                            _settingsButton(l10n),
+                            _historyButton(l10n),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           );
@@ -577,61 +645,24 @@ class _WeatherChip extends StatelessWidget {
   }
 }
 
-class _Toolbar extends StatelessWidget {
-  const _Toolbar({
-    required this.l10n,
-    required this.isRecording,
-    this.recordingLabel,
-    required this.onRecord,
-    required this.onPhoto,
-    required this.onSettings,
-    required this.onHistory,
-  });
+class _ButtonPill extends StatelessWidget {
+  const _ButtonPill({required this.vertical, required this.children});
 
-  final AppLocalizations l10n;
-  final bool isRecording;
-  final String? recordingLabel;
-  final VoidCallback onRecord;
-  final VoidCallback onPhoto;
-  final VoidCallback onSettings;
-  final VoidCallback onHistory;
+  final bool vertical;
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
+    final content = vertical
+        ? Column(mainAxisSize: MainAxisSize.min, children: children)
+        : Row(mainAxisSize: MainAxisSize.min, children: children);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
         color: const Color(0xB3000000),
         borderRadius: BorderRadius.circular(14),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _ToolbarButton(
-            icon: isRecording ? Icons.stop_circle : Icons.videocam,
-            iconColor: isRecording ? const Color(0xFFFF5252) : Colors.white,
-            label: isRecording
-                ? (recordingLabel ?? l10n.toolbarRecord)
-                : l10n.toolbarRecord,
-            onTap: onRecord,
-          ),
-          _ToolbarButton(
-            icon: Icons.photo_camera,
-            label: l10n.toolbarPhoto,
-            onTap: onPhoto,
-          ),
-          _ToolbarButton(
-            icon: Icons.settings,
-            label: l10n.toolbarSettings,
-            onTap: onSettings,
-          ),
-          _ToolbarButton(
-            icon: Icons.history,
-            label: l10n.toolbarHistory,
-            onTap: onHistory,
-          ),
-        ],
-      ),
+      child: content,
     );
   }
 }
@@ -811,10 +842,15 @@ class _SpeedOverridePanel extends StatelessWidget {
 }
 
 class _DevCountsChip extends StatelessWidget {
-  const _DevCountsChip({required this.cars, required this.motos});
+  const _DevCountsChip({
+    required this.cars,
+    required this.motos,
+    this.laneDebug,
+  });
 
   final int cars;
   final int motos;
+  final String? laneDebug;
 
   @override
   Widget build(BuildContext context) {
@@ -844,6 +880,20 @@ class _DevCountsChip extends StatelessWidget {
           row(Icons.directions_car, cars),
           const SizedBox(height: 3),
           row(Icons.two_wheeler, motos),
+          if (laneDebug != null) ...[
+            const SizedBox(height: 3),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.route, size: 14, color: Colors.white),
+                const SizedBox(width: 5),
+                Text(
+                  laneDebug!,
+                  style: const TextStyle(color: Colors.white, fontSize: 11),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

@@ -201,6 +201,10 @@ class HudCubit extends Cubit<HudState> {
       alert: alert,
       departureCount: departed ? state.departureCount + 1 : null,
       lane: frame.lane,
+      laneDebug: frame.laneDbg == null
+          ? null
+          : 'L${frame.laneDbg!['l']} R${frame.laneDbg!['r']} '
+              '${frame.laneDbg!['gate']}',
       laneStatus: _laneMonitor.status,
       laneEventCount: laneFired ? state.laneEventCount + 1 : null,
       detectedCars: rawCars,

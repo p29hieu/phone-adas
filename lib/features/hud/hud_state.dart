@@ -44,6 +44,7 @@ class HudState extends Equatable {
     this.alert = AdasAlert.none,
     this.departureCount = 0,
     this.lane,
+    this.laneDebug,
     this.laneStatus = LaneStatus.unknown,
     this.laneEventCount = 0,
     this.speedKmh = 0,
@@ -80,6 +81,9 @@ class HudState extends Equatable {
 
   /// Ego-lane estimate for the test-mode overlay (null = not detected).
   final LaneObservation? lane;
+
+  /// Human-readable lane-detector diagnostics for the dev-mode chip.
+  final String? laneDebug;
   final LaneStatus laneStatus;
 
   /// Increments once per lane-departure event (test-mode warning).
@@ -115,6 +119,7 @@ class HudState extends Equatable {
     AdasAlert? alert,
     int? departureCount,
     Object? lane = _unset,
+    String? laneDebug,
     LaneStatus? laneStatus,
     int? laneEventCount,
     double? speedKmh,
@@ -143,6 +148,7 @@ class HudState extends Equatable {
         alert: alert ?? this.alert,
         departureCount: departureCount ?? this.departureCount,
         lane: identical(lane, _unset) ? this.lane : lane as LaneObservation?,
+        laneDebug: laneDebug ?? this.laneDebug,
         laneStatus: laneStatus ?? this.laneStatus,
         laneEventCount: laneEventCount ?? this.laneEventCount,
         speedKmh: speedKmh ?? this.speedKmh,
@@ -176,6 +182,7 @@ class HudState extends Equatable {
         departureCount,
         lane?.offset,
         lane?.conf,
+        laneDebug,
         laneStatus,
         laneEventCount,
         speedKmh,

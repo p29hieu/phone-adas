@@ -83,6 +83,7 @@ class AdasFrame {
     required this.frameH,
     this.fx,
     this.lane,
+    this.laneDbg,
     required this.detections,
   });
 
@@ -98,6 +99,9 @@ class AdasFrame {
 
   /// Ego-lane estimate, when the native core produced one this frame.
   final LaneObservation? lane;
+
+  /// Lane-detector diagnostics ({l, r, gate}) for the dev-mode overlay.
+  final Map<dynamic, dynamic>? laneDbg;
   final List<Detection> detections;
 
   factory AdasFrame.fromMap(Map<dynamic, dynamic> m) => AdasFrame(
@@ -108,6 +112,9 @@ class AdasFrame {
         fx: (m['fx'] as num?)?.toDouble(),
         lane: m['lane'] is Map<dynamic, dynamic>
             ? LaneObservation.fromMap(m['lane'] as Map<dynamic, dynamic>)
+            : null,
+        laneDbg: m['laneDbg'] is Map<dynamic, dynamic>
+            ? m['laneDbg'] as Map<dynamic, dynamic>
             : null,
         detections: (m['detections'] as List<dynamic>? ?? const [])
             .map((e) => Detection.fromMap(e as Map<dynamic, dynamic>))
