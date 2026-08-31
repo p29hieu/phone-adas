@@ -12,6 +12,7 @@ import '../../cookbook/hud_numeral.dart';
 import '../../cookbook/pulsing_border.dart';
 import '../../cookbook/status_badge.dart';
 import '../../domain/collision_warning.dart';
+import '../../domain/distance_estimator.dart';
 import '../../domain/distance_format.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/weather_service.dart';
@@ -111,6 +112,16 @@ class _HudScreenState extends State<HudScreen> {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(l10n.comingSoon)));
   }
+
+  Color _alertColor(HudState s) => switch (s.alert) {
+        AdasAlert.collision || AdasAlert.collisionCritical => _red,
+        AdasAlert.keepDistance => _orange,
+        AdasAlert.none => Colors.green.shade500,
+      };
+
+  static bool _laneLocked(HudState state) =>
+      state.lane != null &&
+      state.lane!.conf >= DistanceEstimator.laneMinConf;
 
   static String _fmtElapsed(Duration d) {
     final m = d.inMinutes.toString().padLeft(2, '0');
@@ -306,8 +317,13 @@ class _HudScreenState extends State<HudScreen> {
                 BBoxOverlay(
                   frameSize:
                       Size(state.frameW.toDouble(), state.frameH.toDouble()),
+                  // With a confident lane lock, only the lead vehicle is
+                  // annotated — the dedicated panel below carries the
+                  // number; without a lane, all relevant vehicles show.
                   items: [
-                    for (final v in state.vehicles) _bubbleFor(v, state),
+                    for (final v in state.vehicles)
+                      if (!_laneLocked(state) || v.isLead)
+                        _bubbleFor(v, state),
                   ],
                 ),
                 PulsingBorder(
@@ -377,6 +393,15 @@ class _HudScreenState extends State<HudScreen> {
                           ],
                         ),
                         const Spacer(),
+                        Center(
+                          child: _LeadDistancePanel(
+                            state: state,
+                            l10n: l10n,
+                            laneLocked: _laneLocked(state),
+                            color: _alertColor(state),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
                         Center(
                           child: _Toolbar(
                             l10n: l10n,
@@ -649,6 +674,75 @@ class _ToolbarButton extends StatelessWidget {
 
 /// Test-mode vertical slider simulating the ego speed (0-130 km/h) so the
 /// alert pipeline can be exercised against recorded videos on a screen.
+/// Dedicated, glanceable readout of the lead-vehicle distance. Turns
+/// orange/red with the alert level; shows a lane icon while the vehicle
+/// filter is locked onto the detected ego lane.
+class _LeadDistancePanel extends StatelessWidget {
+  const _LeadDistancePanel({
+    required this.state,
+    required this.l10n,
+    required this.laneLocked,
+    required this.color,
+  });
+
+  final HudState state;
+  final AppLocalizations l10n;
+  final bool laneLocked;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final distance = state.leadDistanceM;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xCC101418),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.7), width: 1.5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (laneLocked)
+            Padding(
+              padding: const EdgeInsets.only(right: 8, bottom: 6),
+              child: Icon(Icons.add_road, size: 18, color: color),
+            ),
+          if (distance == null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                l10n.hudNoLeadVehicle,
+                style: const TextStyle(color: Colors.white54, fontSize: 15),
+              ),
+            )
+          else ...[
+            HudNumeral(formatDistanceM(distance), size: 44, color: color),
+            const SizedBox(width: 4),
+            const Padding(
+              padding: EdgeInsets.only(bottom: 5),
+              child: Text('m',
+                  style: TextStyle(color: Colors.white70, fontSize: 15)),
+            ),
+            if (state.requiredGapM > 0) ...[
+              const SizedBox(width: 12),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 5),
+                child: Text(
+                  l10n.hudRequiredGap(state.requiredGapM.round()),
+                  style: const TextStyle(
+                      color: Colors.white54, fontSize: 13),
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _SpeedOverridePanel extends StatelessWidget {
   const _SpeedOverridePanel({required this.state});
 

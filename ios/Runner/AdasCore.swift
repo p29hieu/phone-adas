@@ -459,13 +459,12 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     let scale = Double(w) / 1920.0
     // Stop above the hood/dashboard: real mounts show the dash from ~78%
     // down, and its reflections fit as fake splayed lane lines.
-    let yTop = Int(Double(h) * 0.58)
-    let yBot = Int(Double(h) * 0.80)
+    let yTop = Int(Double(h) * 0.54)
+    let yBot = Int(Double(h) * 0.84)
     let xMid = w / 2
     let xSpan = Int(Double(w) * 0.45)
-    let stepY = max(1, (yBot - yTop) / 26)
+    let stepY = max(1, (yBot - yTop) / 30)
     let stepX = max(2, Int(3 * scale))
-    let brightThr = 18
     let trackWindow = Int(90 * scale)
 
     var leftPts: [(y: Double, x: Double)] = []
@@ -483,12 +482,33 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
         let p = CGPoint(x: Double(x), y: Double(y))
         return boxes.contains { $0.insetBy(dx: -10, dy: -10).contains(p) }
       }
-      func isStripe(_ x: Int) -> Bool {
-        guard x - off - stepX >= 0, x + off + stepX < w, !blocked(x) else { return false }
+      // Stripe strength: brighter than BOTH sides (min of the two deltas).
+      func topHat(_ x: Int) -> Int {
+        guard x - off - stepX >= 0, x + off + stepX < w else { return 0 }
         let c = lum(x)
-        return c - lum(x - off) > brightThr && c - lum(x + off) > brightThr
+        return min(c - lum(x - off), c - lum(x + off))
       }
-      func scanSide(prev: (a: Double, b: Double)?, isLeft: Bool) -> Int {
+      // Per-row adaptive threshold: 2.5x the mean top-hat magnitude of the
+      // half-row. Washed-out frames (rain, glare, re-photographed screens)
+      // lower the bar; textured asphalt raises it. Floor of 10 keeps noise
+      // out on flat frames.
+      func adaptiveThr(_ from: Int, _ to: Int) -> Int {
+        var sum = 0, n = 0
+        var x = from
+        while x < to {
+          sum += abs(topHat(x))
+          n += 1
+          x += stepX
+        }
+        let mean = n > 0 ? Double(sum) / Double(n) : 0
+        return max(10, Int(mean * 2.5))
+      }
+      let thrLeft = adaptiveThr(xMid - xSpan, xMid - stepX)
+      let thrRight = adaptiveThr(xMid + stepX, xMid + xSpan)
+      func isStripe(_ x: Int, _ thr: Int) -> Bool {
+        !blocked(x) && topHat(x) > thr
+      }
+      func scanSide(prev: (a: Double, b: Double)?, isLeft: Bool, thr: Int) -> Int {
         if let fit = prev {
           // Tracking: search only near the previous line's position.
           let cx = Int(fit.a * Double(y) + fit.b)
@@ -498,7 +518,7 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
                              : min(cx + trackWindow, xMid + xSpan)
           var x = inner
           while isLeft ? x > outer : x < outer {
-            if isStripe(x) { return x }
+            if isStripe(x, thr) { return x }
             x += isLeft ? -stepX : stepX
           }
           return -1
@@ -506,19 +526,19 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
         // Acquisition: nearest stripe to the center wins.
         var x = isLeft ? xMid - off - stepX : xMid + off + stepX
         while isLeft ? x > xMid - xSpan : x < xMid + xSpan {
-          if isStripe(x) { return x }
+          if isStripe(x, thr) { return x }
           x += isLeft ? -stepX : stepX
         }
         return -1
       }
-      let xl = scanSide(prev: prevLeftFit, isLeft: true)
+      let xl = scanSide(prev: prevLeftFit, isLeft: true, thr: thrLeft)
       if xl >= 0 { leftPts.append((Double(y), Double(xl))) }
-      let xr = scanSide(prev: prevRightFit, isLeft: false)
+      let xr = scanSide(prev: prevRightFit, isLeft: false, thr: thrRight)
       if xr >= 0 { rightPts.append((Double(y), Double(xr))) }
       y += stepY
     }
 
-    guard leftPts.count >= 7, rightPts.count >= 7,
+    guard leftPts.count >= 6, rightPts.count >= 6,
           var l = Self.fitLineTrimmed(leftPts),
           var r = Self.fitLineTrimmed(rightPts)
     else { return laneMiss() }
