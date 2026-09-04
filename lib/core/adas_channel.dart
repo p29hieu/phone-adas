@@ -47,4 +47,12 @@ class AdasChannel {
   /// was recorded.
   static Future<String?> stopRecording() =>
       _control.invokeMethod<String>('stopRecording');
+
+  /// App version label, e.g. "v1.1.0 (2)" — shown in the dev-mode chip so
+  /// every field screenshot identifies its build.
+  static Future<String?> versionLabel() async {
+    final res = await _control.invokeMethod<dynamic>('getVersion');
+    if (res is! Map) return null;
+    return 'v${res['version']} (${res['build']})';
+  }
 }

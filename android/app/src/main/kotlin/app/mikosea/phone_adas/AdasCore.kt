@@ -21,6 +21,14 @@ import kotlin.math.sin
  *  - MethodChannel `app.mikosea.test/control`: `start` / `stop`.
  */
 object AdasCore {
+    private var versionName = "?"
+    private var versionCode = "?"
+
+    fun setVersion(name: String, code: String) {
+        versionName = name
+        versionCode = code
+    }
+
     private const val EVENTS_CHANNEL = "app.mikosea.test/detections"
     private const val CONTROL_CHANNEL = "app.mikosea.test/control"
     private const val TICK_MS = 100L
@@ -59,6 +67,9 @@ object AdasCore {
                 when (call.method) {
                     "start" -> { start(); result.success(mapOf("textureId" to null)) }
                     "stop" -> { stop(); result.success(null) }
+                    "getVersion" -> result.success(
+                        mapOf("version" to versionName, "build" to versionCode),
+                    )
                     "startRecording" -> result.success(false) // phase 3
                     "stopRecording" -> result.success(null)
                     "beep" -> {

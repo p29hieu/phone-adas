@@ -124,6 +124,12 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     case "beep":
       AudioServicesPlaySystemSound(1052)
       result(nil)
+    case "getVersion":
+      let info = Bundle.main.infoDictionary
+      result([
+        "version": info?["CFBundleShortVersionString"] as? String ?? "?",
+        "build": info?["CFBundleVersion"] as? String ?? "?",
+      ])
     case "startRecording":
       guard cameraAvailable else {
         result(false)

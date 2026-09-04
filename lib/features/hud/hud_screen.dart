@@ -429,6 +429,7 @@ class _HudScreenState extends State<HudScreen> {
                                     cars: state.detectedCars,
                                     motos: state.detectedMotos,
                                     laneDebug: state.laneDebug,
+                                    versionLabel: state.versionLabel,
                                   ),
                               ],
                             ),
@@ -846,11 +847,13 @@ class _DevCountsChip extends StatelessWidget {
     required this.cars,
     required this.motos,
     this.laneDebug,
+    this.versionLabel,
   });
 
   final int cars;
   final int motos;
   final String? laneDebug;
+  final String? versionLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -892,6 +895,13 @@ class _DevCountsChip extends StatelessWidget {
                   style: const TextStyle(color: Colors.white, fontSize: 11),
                 ),
               ],
+            ),
+          ],
+          if (versionLabel != null) ...[
+            const SizedBox(height: 3),
+            Text(
+              versionLabel!,
+              style: const TextStyle(color: Colors.white70, fontSize: 10),
             ),
           ],
         ],

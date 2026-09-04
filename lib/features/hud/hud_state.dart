@@ -58,6 +58,7 @@ class HudState extends Equatable {
     this.isDay = true,
     this.isRecording = false,
     this.recordingStartedAt,
+    this.versionLabel,
   });
 
   final HudStatus status;
@@ -105,6 +106,9 @@ class HudState extends Equatable {
   final bool isRecording;
   final DateTime? recordingStartedAt;
 
+  /// "v1.1.0 (2)" — for the dev-mode chip.
+  final String? versionLabel;
+
   static const _unset = Object();
 
   HudState copyWith({
@@ -133,6 +137,7 @@ class HudState extends Equatable {
     bool? isDay,
     bool? isRecording,
     Object? recordingStartedAt = _unset,
+    String? versionLabel,
   }) =>
       HudState(
         status: status ?? this.status,
@@ -166,6 +171,7 @@ class HudState extends Equatable {
         recordingStartedAt: identical(recordingStartedAt, _unset)
             ? this.recordingStartedAt
             : recordingStartedAt as DateTime?,
+        versionLabel: versionLabel ?? this.versionLabel,
       );
 
   @override
@@ -198,5 +204,6 @@ class HudState extends Equatable {
         isDay,
         isRecording,
         recordingStartedAt,
+        versionLabel,
       ];
 }

@@ -89,6 +89,10 @@ class HudCubit extends Cubit<HudState> {
 
   Future<void> start() async {
     await reloadCalibration();
+    final version = await AdasChannel.versionLabel();
+    if (version != null) {
+      emit(state.copyWith(versionLabel: version));
+    }
     final textureId = await AdasChannel.start();
     if (textureId != null) {
       emit(state.copyWith(textureId: textureId));
