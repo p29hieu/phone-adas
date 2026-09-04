@@ -98,7 +98,9 @@ external-UVC source):
   `{ts, mock, frameW, frameH, fx?, lane?, detections: [{cls, conf, x, y, w, h}]}`
   (`lane` = {left: [x0,y0,x1,y1], right: [...], offset, conf} in frame
   pixels — ego-lane estimate for the test-mode overlay; offset 0 = centered,
-  ±1 = on a lane line)
+  ±1 = on a lane line; `laneDbg` = {l, r, gate} detector diagnostics;
+  `laneCalib` = {cx, vy, n} learned mount axis + horizon from two-sided
+  locks — auto-compensates a skewed phone mount, persisted natively)
   (bbox in full-resolution frame pixels; `cls` ∈ car|truck|bus|motorcycle;
   `fx` = per-frame focal length in pixels from camera intrinsics when the
   platform provides it)

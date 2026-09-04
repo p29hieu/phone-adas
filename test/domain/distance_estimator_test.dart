@@ -101,6 +101,19 @@ void main() {
     expect(lead!.cls, 'truck');
   });
 
+  test('learned mount axis recenters the no-lane fallback band', () {
+    final e = DistanceEstimator();
+    // Car at x=1300: outside the default center band (960 +/- 288)...
+    final offCenter = det('car', 1300, 60);
+    expect(e.relevantDetections(frame([offCenter])), isEmpty);
+    // ...but inside the band once the mount is known to aim at ~1250.
+    e.centerXOverride = 1250;
+    expect(e.relevantDetections(frame([offCenter])), [offCenter]);
+    // And the true frame center is now OUTSIDE the recentered band.
+    final centered = det('car', 700, 60);
+    expect(e.relevantDetections(frame([centered])), isEmpty);
+  });
+
   test('pickLead ignores low-confidence detections', () {
     final e = DistanceEstimator();
     final lead = e.pickLead(frame([det('car', 960, 80, conf: 0.2)]));

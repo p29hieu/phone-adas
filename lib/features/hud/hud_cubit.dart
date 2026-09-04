@@ -123,6 +123,8 @@ class HudCubit extends Cubit<HudState> {
     if (frame.fx != null && frame.fx! > 0) {
       _estimator.fPx = frame.fx!;
     }
+    // Learned mount axis recenters the no-lane fallback band.
+    _estimator.centerXOverride = frame.laneCalib?.cx;
     final lead = _estimator.pickLead(frame);
     final distance = lead == null ? null : _estimator.estimate(lead);
 
@@ -204,7 +206,8 @@ class HudCubit extends Cubit<HudState> {
       laneDebug: frame.laneDbg == null
           ? null
           : 'L${frame.laneDbg!['l']} R${frame.laneDbg!['r']} '
-              '${frame.laneDbg!['gate']}',
+              '${frame.laneDbg!['gate']}'
+              '${frame.laneCalib == null ? '' : ' | c${frame.laneCalib!.cx.round()} n${frame.laneCalib!.n}'}',
       laneStatus: _laneMonitor.status,
       laneEventCount: laneFired ? state.laneEventCount + 1 : null,
       detectedCars: rawCars,

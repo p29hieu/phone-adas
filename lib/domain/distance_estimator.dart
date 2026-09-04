@@ -15,6 +15,11 @@ class DistanceEstimator {
   /// 1.0 = uncalibrated.
   double scale;
 
+  /// Learned mount axis (px) from native auto-calibration; when set, the
+  /// no-lane fallback band centers here instead of the frame center, so a
+  /// skewed mount still watches the ego lane.
+  double? centerXOverride;
+
   /// Assumed real vehicle widths per class, meters.
   static const Map<String, double> realWidthM = {
     'car': 1.8,
@@ -59,7 +64,8 @@ class DistanceEstimator {
         final margin = (xr - xl) * laneMarginRatio;
         return cx >= xl - margin && cx <= xr + margin;
       }
-      return (cx - f.frameW / 2).abs() <= f.frameW * laneBandHalfWidth;
+      final bandCenter = centerXOverride ?? f.frameW / 2;
+      return (cx - bandCenter).abs() <= f.frameW * laneBandHalfWidth;
     }
 
     return [

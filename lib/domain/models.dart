@@ -75,6 +75,22 @@ class LaneObservation {
       );
 }
 
+/// Mount auto-calibration learned by the native core: the true lane-center
+/// axis (cx, px) and horizon (vy, px) of THIS mount, from n two-sided locks.
+class LaneCalib {
+  const LaneCalib({required this.cx, required this.vy, required this.n});
+
+  final double cx;
+  final double vy;
+  final int n;
+
+  factory LaneCalib.fromMap(Map<dynamic, dynamic> m) => LaneCalib(
+        cx: (m['cx'] as num).toDouble(),
+        vy: (m['vy'] as num).toDouble(),
+        n: (m['n'] as num).toInt(),
+      );
+}
+
 class AdasFrame {
   const AdasFrame({
     required this.ts,
@@ -84,6 +100,7 @@ class AdasFrame {
     this.fx,
     this.lane,
     this.laneDbg,
+    this.laneCalib,
     required this.detections,
   });
 
@@ -102,6 +119,9 @@ class AdasFrame {
 
   /// Lane-detector diagnostics ({l, r, gate}) for the dev-mode overlay.
   final Map<dynamic, dynamic>? laneDbg;
+
+  /// Learned mount axis/horizon, once the native core has calibrated.
+  final LaneCalib? laneCalib;
   final List<Detection> detections;
 
   factory AdasFrame.fromMap(Map<dynamic, dynamic> m) => AdasFrame(
@@ -115,6 +135,9 @@ class AdasFrame {
             : null,
         laneDbg: m['laneDbg'] is Map<dynamic, dynamic>
             ? m['laneDbg'] as Map<dynamic, dynamic>
+            : null,
+        laneCalib: m['laneCalib'] is Map<dynamic, dynamic>
+            ? LaneCalib.fromMap(m['laneCalib'] as Map<dynamic, dynamic>)
             : null,
         detections: (m['detections'] as List<dynamic>? ?? const [])
             .map((e) => Detection.fromMap(e as Map<dynamic, dynamic>))

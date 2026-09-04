@@ -48,6 +48,13 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     self.textures = textures
     super.init()
     textureId = textures.register(self)
+    let ud = UserDefaults.standard
+    let n = ud.integer(forKey: "adas_calib_n")
+    if n > 0 {
+      calibSamples = n
+      calibCenterX = ud.double(forKey: "adas_calib_cx")
+      calibVpY = ud.double(forKey: "adas_calib_vy")
+    }
     NotificationCenter.default.addObserver(
       self,
       selector: #selector(orientationChanged),
@@ -384,6 +391,13 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     if !lastLaneDbg.isEmpty {
       frame["laneDbg"] = lastLaneDbg
     }
+    if let cx = calibCenterX {
+      frame["laneCalib"] = [
+        "cx": cx,
+        "vy": calibVpY ?? 0,
+        "n": calibSamples,
+      ] as [String: Any]
+    }
     emit(frame)
   }
 
@@ -446,6 +460,14 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
   /// chip so field failures are diagnosable from a screenshot.
   private var lastLaneDbg: [String: Any] = [:]
 
+  // Mount auto-calibration: slow EMA of lane geometry from high-quality
+  // (two-sided) locks. calibCenterX = the mount's true lane-center axis at
+  // the scan floor (compensates a skewed/off-center phone), calibVpY = the
+  // learned horizon. Persisted across launches.
+  private var calibCenterX: Double?
+  private var calibVpY: Double?
+  private var calibSamples = 0
+
   /// Finds the ego-lane boundaries as painted STRIPES: a candidate pixel
   /// must be brighter than BOTH sides (top-hat test), so curbs, medians and
   /// shadow edges — which only contrast on one side — cannot win. Per row
@@ -468,7 +490,11 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     // down, and its reflections fit as fake splayed lane lines.
     let yTop = Int(Double(h) * 0.54)
     let yBot = Int(Double(h) * 0.84)
-    let xMid = w / 2
+    // Search + gates center on the learned mount axis, not the frame center,
+    // so a skewed/off-center phone still hunts where the lane really is.
+    let xMid = min(max(Int(calibCenterX ?? Double(w) / 2),
+                       Int(0.30 * Double(w))),
+                   Int(0.70 * Double(w)))
     let xSpan = Int(Double(w) * 0.45)
     let stepY = max(1, (yBot - yTop) / 30)
     let stepX = max(2, Int(3 * scale))
@@ -561,13 +587,16 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     // (the other boundary is a bare curb). With a strong single line,
     // coast the missing side from tracking, or synthesize it from a
     // standard-lane-width prior converging at the horizon.
+    let priorVpY = calibVpY ?? Double(h) * 0.45
     if lFitOpt == nil, let rFit = rFitOpt, rightPts.count >= 8 {
       lFitOpt = prevLeftFit ??
-        Self.offsetLine(from: rFit, w: w, h: h, yB: yB, yT: yT, toLeft: true)
+        Self.offsetLine(from: rFit, w: w, yV: priorVpY, yB: yB, yT: yT,
+                        toLeft: true)
       oneSided = true
     } else if rFitOpt == nil, let lFit = lFitOpt, leftPts.count >= 8 {
       rFitOpt = prevRightFit ??
-        Self.offsetLine(from: lFit, w: w, h: h, yB: yB, yT: yT, toLeft: false)
+        Self.offsetLine(from: lFit, w: w, yV: priorVpY, yB: yB, yT: yT,
+                        toLeft: false)
       oneSided = true
     }
     guard var l = lFitOpt, var r = rFitOpt else {
@@ -599,7 +628,15 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
       return laneMiss("slope", leftPts.count, rightPts.count)
     }
     let vanishY = (r.b - l.b) / slopeDenom
-    guard vanishY > Double(h) * 0.25, vanishY < Double(h) * 0.65
+    let vyLo: Double, vyHi: Double
+    if let vy = calibVpY, calibSamples >= 30 {
+      vyLo = max(0.15 * Double(h), vy - 0.12 * Double(h))
+      vyHi = min(0.75 * Double(h), vy + 0.12 * Double(h))
+    } else {
+      vyLo = Double(h) * 0.25
+      vyHi = Double(h) * 0.65
+    }
+    guard vanishY > vyLo, vanishY < vyHi
     else { return laneMiss("vanish", leftPts.count, rightPts.count) }
     guard abs((xlB + xrB) / 2 - Double(xMid)) < Double(w) * 0.18
     else { return laneMiss("center", leftPts.count, rightPts.count) }
@@ -609,6 +646,15 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     laneMissCount = 0
 
     let center = (xlB + xrB) / 2
+    if !oneSided,
+       center > 0.30 * Double(w), center < 0.70 * Double(w),
+       vanishY > 0.20 * Double(h), vanishY < 0.70 * Double(h) {
+      let alpha = calibSamples < 50 ? 0.10 : 0.02
+      calibCenterX = (calibCenterX ?? center) * (1 - alpha) + center * alpha
+      calibVpY = (calibVpY ?? vanishY) * (1 - alpha) + vanishY * alpha
+      calibSamples += 1
+      if calibSamples % 20 == 0 { persistCalib() }
+    }
     let offset = (Double(xMid) - center) / (laneWidth / 2)
     var conf = Double(max(leftPts.count, rightPts.count)) / Double(max(1, scannedRows))
     if !oneSided {
@@ -641,12 +687,18 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     return nil
   }
 
+  private func persistCalib() {
+    let ud = UserDefaults.standard
+    ud.set(calibCenterX ?? 0, forKey: "adas_calib_cx")
+    ud.set(calibVpY ?? 0, forKey: "adas_calib_vy")
+    ud.set(calibSamples, forKey: "adas_calib_n")
+  }
+
   /// Synthesizes the missing lane boundary from the found one, offset by a
   /// standard-lane-width prior that converges toward the horizon (~0.45h).
   private static func offsetLine(from fit: (a: Double, b: Double),
-                                 w: Int, h: Int, yB: Double, yT: Double,
+                                 w: Int, yV: Double, yB: Double, yT: Double,
                                  toLeft: Bool) -> (a: Double, b: Double) {
-    let yV = Double(h) * 0.45
     func width(_ y: Double) -> Double {
       let frac = max(0.05, (y - yV) / max(1, yB - yV))
       return 0.30 * Double(w) * frac
@@ -727,6 +779,7 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
         box("car", 960, 620, 1.8, dCenter, 0.8, 0.93),
         box("car", 1330, 660, 1.8, dRight, 0.8, 0.91),
       ],
+      "laneCalib": ["cx": 960.0, "vy": 486.0, "n": 99] as [String: Any],
       "lane": [
         "left": [760.0 - 80.0 * sin(mockPhase / 7.0), 1080.0, 880.0, 626.0],
         "right": [1160.0 - 80.0 * sin(mockPhase / 7.0), 1080.0, 1040.0, 626.0],

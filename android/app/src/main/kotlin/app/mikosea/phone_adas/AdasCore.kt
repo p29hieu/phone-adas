@@ -105,6 +105,7 @@ object AdasCore {
                     box("car", 960.0, 620.0, 1.8 * 1500.0 / dCenter, 0.8, 0.93),
                     box("car", 1330.0, 660.0, 1.8 * 1500.0 / dRight, 0.8, 0.91),
                 ),
+                "laneCalib" to mapOf("cx" to 960.0, "vy" to 486.0, "n" to 99),
                 "lane" to mapOf(
                     "left" to listOf(760.0 - 80.0 * sin(phase / 7.0), 1080.0, 880.0, 626.0),
                     "right" to listOf(1160.0 - 80.0 * sin(phase / 7.0), 1080.0, 1040.0, 626.0),
