@@ -17,6 +17,7 @@ import '../../domain/lead_departure.dart';
 import '../../domain/models.dart';
 import '../../domain/safe_distance.dart';
 import '../../domain/solar.dart';
+import '../../domain/width_learner.dart';
 import '../../services/weather_service.dart';
 import '../calibration/calibration_cubit.dart';
 import 'hud_state.dart';
@@ -36,6 +37,9 @@ class HudCubit extends Cubit<HudState> {
   final CollisionMonitor _collision = CollisionMonitor();
   final LeadDepartureDetector _departure = LeadDepartureDetector();
   final LaneMonitor _laneMonitor = LaneMonitor();
+  WidthLearner _widthLearner = WidthLearner();
+  int _widthSamplesAtSave = 0;
+  static const _widthLearnerKey = 'width_learner_v1';
 
   /// Displayed distances refresh at this interval; the safety pipeline and
   /// alerts always run per frame (~10 Hz). Configured from the settings
@@ -89,6 +93,7 @@ class HudCubit extends Cubit<HudState> {
 
   Future<void> start() async {
     await reloadCalibration();
+    await _loadWidthLearner();
     final version = await AdasChannel.versionLabel();
     if (version != null) {
       emit(state.copyWith(versionLabel: version));
@@ -130,7 +135,17 @@ class HudCubit extends Cubit<HudState> {
     // Learned mount axis recenters the no-lane fallback band.
     _estimator.centerXOverride = frame.laneCalib?.cx;
     final lead = _estimator.pickLead(frame);
-    final distance = lead == null ? null : _estimator.estimate(lead);
+    var distance = lead == null ? null : _estimator.estimate(lead);
+
+    // LiDAR ground truth: authoritative at close range, and each reading
+    // teaches the true width of that vehicle class for long-range accuracy.
+    var leadDepthLidar = false;
+    final depth = lead?.depthM;
+    if (lead != null && depth != null && depth > 0.3 && depth < 7) {
+      distance = depth;
+      leadDepthLidar = true;
+      _learnWidthFrom(lead, depth);
+    }
 
     // Overlay + alerts see only relevant vehicles (in-lane when a lane is
     // detected, central band otherwise); the dev chip counts everything.
@@ -206,6 +221,7 @@ class HudCubit extends Cubit<HudState> {
       requiredGapM: SafeDistance.legalMinimumMeters(state.speedKmh),
       alert: alert,
       departureCount: departed ? state.departureCount + 1 : null,
+      leadDepthLidar: leadDepthLidar,
       lane: frame.lane,
       laneDebug: frame.laneDbg == null
           ? null
@@ -217,6 +233,37 @@ class HudCubit extends Cubit<HudState> {
       detectedCars: rawCars,
       detectedMotos: rawMotos,
     ));
+  }
+
+  void _learnWidthFrom(Detection lead, double depthM) {
+    if (_estimator.fPx <= 0 || lead.w <= 0) return;
+    // Sample in the estimator's own frame (includes the calibration scale)
+    // so learned widths compose with the manual wizard, not against it.
+    final sample = depthM * lead.w / (_estimator.fPx * _estimator.scale);
+    if (!_widthLearner.add(lead.cls, sample)) return;
+    _estimator.widthOverrides = _widthLearner.applicable;
+    if (_widthLearner.totalSamples - _widthSamplesAtSave >= 20) {
+      _widthSamplesAtSave = _widthLearner.totalSamples;
+      _persistWidthLearner();
+      crashlyticsLog(
+          'HudCubit: lidar widths ${_widthLearner.applicable} '
+          '(n=${_widthLearner.totalSamples})');
+    }
+  }
+
+  Future<void> _loadWidthLearner() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_widthLearnerKey);
+    if (raw != null && raw.isNotEmpty) {
+      _widthLearner = WidthLearner.deserialize(raw);
+      _widthSamplesAtSave = _widthLearner.totalSamples;
+      _estimator.widthOverrides = _widthLearner.applicable;
+    }
+  }
+
+  Future<void> _persistWidthLearner() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_widthLearnerKey, _widthLearner.serialize());
   }
 
   /// Test-mode manual speed (0-130 km/h); null returns control to GPS.

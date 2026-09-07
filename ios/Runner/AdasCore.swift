@@ -23,7 +23,8 @@ import Vision
 ///  - MethodChannel `app.mikosea.test/control`:
 ///    `start` -> {textureId: Int?}, `stop`.
 final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterTexture,
-                      AVCaptureVideoDataOutputSampleBufferDelegate {
+                      AVCaptureVideoDataOutputSampleBufferDelegate,
+                      AVCaptureDepthDataOutputDelegate {
 
   // MARK: - Registration
 
@@ -89,6 +90,14 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
 
   private let bufferLock = NSLock()
   private var latestBuffer: CVPixelBuffer?
+
+  // LiDAR depth (Pro devices): opportunistic ground truth at close range —
+  // authoritative lead distance under ~6 m and auto-learning of true
+  // per-class vehicle widths. Inactive (and cost-free) on other devices.
+  private let depthOutput = AVCaptureDepthDataOutput()
+  private let depthLock = NSLock()
+  private var latestDepthMap: CVPixelBuffer?
+  private var lidarActive = false
 
   private var mockTimer: Timer?
   private var mockPhase = 0.0
@@ -244,7 +253,18 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     cameraConfigured = true
     session.beginConfiguration()
     session.sessionPreset = .hd1920x1080
-    if let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+    // Prefer the LiDAR-fused wide camera (same lens/FOV) so depth rides the
+    // existing session; plain wide camera everywhere else.
+    let lidarDevice: AVCaptureDevice?
+    if #available(iOS 15.4, *) {
+      lidarDevice = AVCaptureDevice.default(
+        .builtInLiDARDepthCamera, for: .video, position: .back)
+    } else {
+      lidarDevice = nil
+    }
+    let device = lidarDevice
+      ?? AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back)
+    if let device,
        let input = try? AVCaptureDeviceInput(device: device),
        session.canAddInput(input) {
       session.addInput(input)
@@ -260,6 +280,15 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
        connection.isCameraIntrinsicMatrixDeliverySupported {
       connection.isCameraIntrinsicMatrixDeliveryEnabled = true
     }
+    if lidarDevice != nil {
+      depthOutput.isFilteringEnabled = true
+      depthOutput.setDelegate(self, callbackQueue: captureQueue)
+      if session.canAddOutput(depthOutput) {
+        session.addOutput(depthOutput)
+        lidarActive = true
+        NSLog("AdasCore: LiDAR depth active")
+      }
+    }
     session.commitConfiguration()
   }
 
@@ -273,18 +302,24 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
   /// under rotation lock or at cold start the device orientation is
   /// .unknown/.faceUp while the UI is firmly portrait.
   private func applyOrientation() {
-    guard cameraConfigured, let connection = videoOutput.connection(with: .video) else { return }
+    guard cameraConfigured else { return }
     let angle = Self.rotationAngleForCurrentInterface()
-    if #available(iOS 17.0, *) {
-      if connection.isVideoRotationAngleSupported(angle) {
-        connection.videoRotationAngle = angle
-      }
-    } else {
-      switch angle {
-      case 0: connection.videoOrientation = .landscapeRight
-      case 180: connection.videoOrientation = .landscapeLeft
-      case 270: connection.videoOrientation = .portraitUpsideDown
-      default: connection.videoOrientation = .portrait
+    let connections = [
+      videoOutput.connection(with: .video),
+      depthOutput.connection(with: .depthData),
+    ].compactMap { $0 }
+    for connection in connections {
+      if #available(iOS 17.0, *) {
+        if connection.isVideoRotationAngleSupported(angle) {
+          connection.videoRotationAngle = angle
+        }
+      } else {
+        switch angle {
+        case 0: connection.videoOrientation = .landscapeRight
+        case 180: connection.videoOrientation = .landscapeLeft
+        case 270: connection.videoOrientation = .portraitUpsideDown
+        default: connection.videoOrientation = .portrait
+        }
       }
     }
   }
@@ -372,14 +407,21 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
       let boxH = b.height * roi.height * h
       let boxX = (roi.minX + b.minX * roi.width) * w
       let boxYTop = (1.0 - (roi.minY + b.maxY * roi.height)) * h
-      detections.append([
+      var det: [String: Any] = [
         "cls": label.identifier,
         "conf": Double(label.confidence),
         "x": boxX,
         "y": boxYTop,
         "w": boxW,
         "h": boxH,
-      ])
+      ]
+      if lidarActive,
+         let depth = depthAt(
+           rect: CGRect(x: boxX, y: boxYTop, width: boxW, height: boxH),
+           videoW: frameW, videoH: frameH) {
+        det["depthM"] = depth
+      }
+      detections.append(det)
       vehicleBoxes.append(CGRect(x: boxX, y: boxYTop, width: boxW, height: boxH))
     }
 
@@ -413,6 +455,63 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     }
   }
 
+
+  // MARK: - LiDAR depth
+
+  func depthDataOutput(_ output: AVCaptureDepthDataOutput,
+                       didOutput depthData: AVDepthData,
+                       timestamp: CMTime,
+                       connection: AVCaptureConnection) {
+    let converted = depthData.depthDataType == kCVPixelFormatType_DepthFloat32
+      ? depthData
+      : depthData.converting(toDepthDataType: kCVPixelFormatType_DepthFloat32)
+    depthLock.lock()
+    latestDepthMap = converted.depthDataMap
+    depthLock.unlock()
+  }
+
+  /// Median LiDAR depth (meters) inside the central half of [rect] (video
+  /// pixel coords), or nil when out of range / not aligned / unavailable.
+  private func depthAt(rect: CGRect, videoW: Int, videoH: Int) -> Double? {
+    depthLock.lock()
+    guard let map = latestDepthMap else {
+      depthLock.unlock()
+      return nil
+    }
+    let dW = CVPixelBufferGetWidth(map)
+    let dH = CVPixelBufferGetHeight(map)
+    // Aspect guard: a rotation or format mismatch would misplace samples.
+    let va = Double(videoW) / Double(videoH)
+    let da = Double(dW) / Double(dH)
+    guard abs(va - da) / va < 0.02 else {
+      depthLock.unlock()
+      return nil
+    }
+    CVPixelBufferLockBaseAddress(map, .readOnly)
+    defer {
+      CVPixelBufferUnlockBaseAddress(map, .readOnly)
+      depthLock.unlock()
+    }
+    guard let base = CVPixelBufferGetBaseAddress(map) else { return nil }
+    let stride = CVPixelBufferGetBytesPerRow(map) / MemoryLayout<Float32>.size
+    let ptr = base.assumingMemoryBound(to: Float32.self)
+    let sx = Double(dW) / Double(videoW)
+    let sy = Double(dH) / Double(videoH)
+    let inner = rect.insetBy(dx: rect.width * 0.25, dy: rect.height * 0.25)
+    var vals: [Double] = []
+    for gy in 0...4 {
+      for gx in 0...4 {
+        let px = Int((inner.minX + inner.width * CGFloat(gx) / 4.0) * sx)
+        let py = Int((inner.minY + inner.height * CGFloat(gy) / 4.0) * sy)
+        guard px >= 0, px < dW, py >= 0, py < dH else { continue }
+        let v = Double(ptr[py * stride + px])
+        if v.isFinite, v > 0.25, v < 7.0 { vals.append(v) }
+      }
+    }
+    guard vals.count >= 6 else { return nil }
+    vals.sort()
+    return vals[vals.count / 2]
+  }
 
   // MARK: - Recording
 
@@ -780,11 +879,15 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
       "frameW": 1920,
       "frameH": 1080,
       "fx": Self.mockFocalPx,
-      "detections": [
-        box("motorcycle", 620, 760, 0.8, dMoto, 1.6, 0.88),
-        box("car", 960, 620, 1.8, dCenter, 0.8, 0.93),
-        box("car", 1330, 660, 1.8, dRight, 0.8, 0.91),
-      ],
+      "detections": {
+        var moto = box("motorcycle", 620, 760, 0.8, dMoto, 1.6, 0.88)
+        if dMoto < 6.0 { moto["depthM"] = dMoto }
+        return [
+          moto,
+          box("car", 960, 620, 1.8, dCenter, 0.8, 0.93),
+          box("car", 1330, 660, 1.8, dRight, 0.8, 0.91),
+        ]
+      }(),
       "laneCalib": ["cx": 960.0, "vy": 486.0, "n": 99] as [String: Any],
       "lane": [
         "left": [760.0 - 80.0 * sin(mockPhase / 7.0), 1080.0, 880.0, 626.0],

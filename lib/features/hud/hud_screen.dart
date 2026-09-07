@@ -757,6 +757,18 @@ class _LeadDistancePanel extends StatelessWidget {
               child: Text('m',
                   style: TextStyle(color: Colors.white70, fontSize: 15)),
             ),
+            if (state.leadDepthLidar)
+              Padding(
+                padding: const EdgeInsets.only(left: 8, bottom: 6),
+                child: Text(
+                  'LiDAR',
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
             if (state.requiredGapM > 0) ...[
               const SizedBox(width: 12),
               Padding(

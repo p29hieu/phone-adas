@@ -95,7 +95,10 @@ lib/
 external-UVC source):
 
 - `EventChannel app.mikosea.test/detections` → ~10 Hz maps:
-  `{ts, mock, frameW, frameH, fx?, lane?, detections: [{cls, conf, x, y, w, h}]}`
+  `{ts, mock, frameW, frameH, fx?, lane?, detections: [{cls, conf, x, y, w, h, depthM?}]}`
+  (`depthM` = LiDAR distance in meters, only on LiDAR devices within ~6 m —
+  authoritative lead distance at close range and ground truth for learning
+  true per-class vehicle widths)
   (`lane` = {left: [x0,y0,x1,y1], right: [...], offset, conf} in frame
   pixels — ego-lane estimate for the test-mode overlay; offset 0 = centered,
   ±1 = on a lane line; `laneDbg` = {l, r, gate} detector diagnostics;

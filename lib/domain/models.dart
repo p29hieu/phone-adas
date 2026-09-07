@@ -10,6 +10,7 @@ class Detection {
     required this.y,
     required this.w,
     required this.h,
+    this.depthM,
   });
 
   /// One of: car, truck, bus, motorcycle.
@@ -19,6 +20,10 @@ class Detection {
   /// Bounding box in full-resolution frame pixels (origin top-left).
   final double x, y, w, h;
 
+  /// LiDAR-measured distance (m) to this object, when the device has LiDAR
+  /// and the object is within range (~0.3-6 m). Ground truth at close range.
+  final double? depthM;
+
   factory Detection.fromMap(Map<dynamic, dynamic> m) => Detection(
         cls: m['cls'] as String,
         conf: (m['conf'] as num).toDouble(),
@@ -26,6 +31,7 @@ class Detection {
         y: (m['y'] as num).toDouble(),
         w: (m['w'] as num).toDouble(),
         h: (m['h'] as num).toDouble(),
+        depthM: (m['depthM'] as num?)?.toDouble(),
       );
 }
 

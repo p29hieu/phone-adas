@@ -20,6 +20,10 @@ class DistanceEstimator {
   /// skewed mount still watches the ego lane.
   double? centerXOverride;
 
+  /// LiDAR-learned true widths per class (domain/width_learner.dart);
+  /// overrides the static assumptions once enough samples accumulate.
+  Map<String, double> widthOverrides = const {};
+
   /// Assumed real vehicle widths per class, meters.
   static const Map<String, double> realWidthM = {
     'car': 1.8,
@@ -35,7 +39,7 @@ class DistanceEstimator {
   static const double laneBandHalfWidth = 0.15;
 
   double? estimate(Detection d) {
-    final w = realWidthM[d.cls];
+    final w = widthOverrides[d.cls] ?? realWidthM[d.cls];
     if (w == null || d.w <= 0) return null;
     return w * fPx / d.w * scale;
   }

@@ -42,6 +42,7 @@ class HudState extends Equatable {
     this.frameH = 1080,
     this.requiredGapM = 0,
     this.alert = AdasAlert.none,
+    this.leadDepthLidar = false,
     this.departureCount = 0,
     this.lane,
     this.laneDebug,
@@ -76,6 +77,9 @@ class HudState extends Equatable {
   final int frameH;
   final double requiredGapM;
   final AdasAlert alert;
+
+  /// True while the lead distance comes from LiDAR (close range, +/-2 cm).
+  final bool leadDepthLidar;
 
   /// Increments once per "lead vehicle departed while stopped" event.
   final int departureCount;
@@ -121,6 +125,7 @@ class HudState extends Equatable {
     int? frameH,
     double? requiredGapM,
     AdasAlert? alert,
+    bool? leadDepthLidar,
     int? departureCount,
     Object? lane = _unset,
     String? laneDebug,
@@ -151,6 +156,7 @@ class HudState extends Equatable {
         frameH: frameH ?? this.frameH,
         requiredGapM: requiredGapM ?? this.requiredGapM,
         alert: alert ?? this.alert,
+        leadDepthLidar: leadDepthLidar ?? this.leadDepthLidar,
         departureCount: departureCount ?? this.departureCount,
         lane: identical(lane, _unset) ? this.lane : lane as LaneObservation?,
         laneDebug: laneDebug ?? this.laneDebug,
@@ -185,6 +191,7 @@ class HudState extends Equatable {
         frameH,
         requiredGapM,
         alert,
+        leadDepthLidar,
         departureCount,
         lane?.offset,
         lane?.conf,
