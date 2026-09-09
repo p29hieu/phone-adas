@@ -213,4 +213,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsManualSpeed => 'Điều chỉnh tốc độ bằng tay';
+
+  @override
+  String hudTilted(int deg) {
+    return 'Máy nghiêng $deg°';
+  }
 }

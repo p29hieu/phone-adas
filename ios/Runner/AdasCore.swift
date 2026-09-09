@@ -1,5 +1,6 @@
 import AudioToolbox
 import AVFoundation
+import CoreMotion
 import CoreML
 import Flutter
 import UIKit
@@ -99,6 +100,14 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
   private var latestDepthMap: CVPixelBuffer?
   private var lidarActive = false
 
+  // IMU (gravity): per-frame roll of the image relative to the world and
+  // the camera pitch -> instant horizon row, independent of lane paint.
+  private let motionManager = CMMotionManager()
+  private let motionQueue = OperationQueue()
+  private let motionLock = NSLock()
+  private var latestGravity: (x: Double, y: Double, z: Double)?
+  private var currentRotationAngle: Double = 90
+
   private var mockTimer: Timer?
   private var mockPhase = 0.0
 
@@ -196,6 +205,15 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
 
   private func start() {
     loadModelIfNeeded()
+    if motionManager.isDeviceMotionAvailable, !motionManager.isDeviceMotionActive {
+      motionManager.deviceMotionUpdateInterval = 1.0 / 30.0
+      motionManager.startDeviceMotionUpdates(to: motionQueue) { [weak self] dm, _ in
+        guard let self, let g = dm?.gravity else { return }
+        self.motionLock.lock()
+        self.latestGravity = (g.x, g.y, g.z)
+        self.motionLock.unlock()
+      }
+    }
     guard cameraAvailable else {
       startMockEmitter()
       return
@@ -222,6 +240,7 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
 
   private func stop() {
     stopMockEmitter()
+    motionManager.stopDeviceMotionUpdates()
     if cameraRunning {
       captureQueue.async { self.session.stopRunning() }
       cameraRunning = false
@@ -304,6 +323,7 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
   private func applyOrientation() {
     guard cameraConfigured else { return }
     let angle = Self.rotationAngleForCurrentInterface()
+    currentRotationAngle = Double(angle)
     let connections = [
       videoOutput.connection(with: .video),
       depthOutput.connection(with: .depthData),
@@ -425,6 +445,16 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
       vehicleBoxes.append(CGRect(x: boxX, y: boxYTop, width: boxW, height: boxH))
     }
 
+    let pose = imuPose()
+    var imuHorizonY: Double?
+    if let pose {
+      let f = latestFx ?? 1500.0 * Double(frameW) / 1920.0
+      let horizon = Double(frameH) / 2 - f * tan(pose.pitchDownRad)
+      if horizon > 0, horizon < Double(frameH) * 0.8 {
+        imuHorizonY = horizon
+      }
+    }
+
     var frame: [String: Any] = [
       "ts": Int(Date().timeIntervalSince1970 * 1000),
       "mock": false,
@@ -433,7 +463,10 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
       "fx": latestFx as Any,
       "detections": detections,
     ]
-    if let lane = detectLane(in: pixelBuffer, excluding: vehicleBoxes) {
+    if let pose { frame["roll"] = pose.rollDeg }
+    if let imuHorizonY { frame["horizonY"] = imuHorizonY }
+    if let lane = detectLane(in: pixelBuffer, excluding: vehicleBoxes,
+                             rollDeg: pose?.rollDeg, imuHorizonY: imuHorizonY) {
       frame["lane"] = lane
     }
     if !lastLaneDbg.isEmpty {
@@ -455,6 +488,26 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     }
   }
 
+
+  // MARK: - IMU pose
+
+  /// Roll of the image versus the world (deg, + = tilted clockwise) and
+  /// camera pitch-down (rad), derived from gravity.
+  private func imuPose() -> (rollDeg: Double, pitchDownRad: Double)? {
+    motionLock.lock()
+    let g = latestGravity
+    motionLock.unlock()
+    guard let g else { return nil }
+    let pitchDown = asin(max(-1.0, min(1.0, -g.z)))
+    // Rotate device-frame gravity into the (rotated) image frame. Portrait
+    // (angle 90) is the identity; other orientations rotate by angle-90.
+    let a = (currentRotationAngle - 90) * .pi / 180
+    let gx = g.x * cos(a) + g.y * sin(a)
+    let gy = -g.x * sin(a) + g.y * cos(a)
+    guard gx * gx + gy * gy > 0.01 else { return nil } // camera near-vertical
+    let roll = atan2(gx, -gy) * 180 / .pi
+    return (roll, pitchDown)
+  }
 
   // MARK: - LiDAR depth
 
@@ -581,7 +634,11 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
   /// vehicles are skipped, the fit gets one outlier-trimming round, and the
   /// result is tracked across frames (guided search window + EMA smoothing).
   private func detectLane(in pixelBuffer: CVPixelBuffer,
-                          excluding boxes: [CGRect]) -> [String: Any]? {
+                          excluding boxes: [CGRect],
+                          rollDeg: Double?, imuHorizonY: Double?) -> [String: Any]? {
+    // Row-wise scanning assumes a near-level image; beyond ~10 degrees of
+    // roll the fits skew, so degrade honestly instead of drawing wrong.
+    if let rollDeg, abs(rollDeg) > 10 { return laneMiss("roll", 0, 0) }
     CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
     defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
     guard let base = CVPixelBufferGetBaseAddress(pixelBuffer) else { return laneMiss("buf", 0, 0) }
@@ -591,10 +648,19 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     let ptr = base.assumingMemoryBound(to: UInt8.self)
 
     let scale = Double(w) / 1920.0
-    // Stop above the hood/dashboard: real mounts show the dash from ~78%
-    // down, and its reflections fit as fake splayed lane lines.
-    let yTop = Int(Double(h) * 0.54)
-    let yBot = Int(Double(h) * 0.84)
+    // Scan band anchored to the live IMU horizon when available (tracks
+    // braking/bump pitch instantly); static band otherwise. Both stop above
+    // the hood/dashboard.
+    let yTop: Int
+    let yBot: Int
+    if let imuHorizonY {
+      yTop = Int(min(max(imuHorizonY + 0.08 * Double(h), 0.40 * Double(h)),
+                     0.70 * Double(h)))
+      yBot = Int(min(Double(yTop) + 0.30 * Double(h), 0.84 * Double(h)))
+    } else {
+      yTop = Int(Double(h) * 0.54)
+      yBot = Int(Double(h) * 0.84)
+    }
     // Search + gates center on the learned mount axis, not the frame center,
     // so a skewed/off-center phone still hunts where the lane really is.
     let xMid = min(max(Int(calibCenterX ?? Double(w) / 2),
@@ -692,7 +758,7 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     // (the other boundary is a bare curb). With a strong single line,
     // coast the missing side from tracking, or synthesize it from a
     // standard-lane-width prior converging at the horizon.
-    let priorVpY = calibVpY ?? Double(h) * 0.45
+    let priorVpY = imuHorizonY ?? calibVpY ?? Double(h) * 0.45
     if lFitOpt == nil, let rFit = rFitOpt, rightPts.count >= 8 {
       lFitOpt = prevLeftFit ??
         Self.offsetLine(from: rFit, w: w, yV: priorVpY, yB: yB, yT: yT,
@@ -734,7 +800,10 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     }
     let vanishY = (r.b - l.b) / slopeDenom
     let vyLo: Double, vyHi: Double
-    if let vy = calibVpY, calibSamples >= 30 {
+    if let imuHorizonY {
+      vyLo = max(0.10 * Double(h), imuHorizonY - 0.10 * Double(h))
+      vyHi = min(0.75 * Double(h), imuHorizonY + 0.10 * Double(h))
+    } else if let vy = calibVpY, calibSamples >= 30 {
       vyLo = max(0.15 * Double(h), vy - 0.12 * Double(h))
       vyHi = min(0.75 * Double(h), vy + 0.12 * Double(h))
     } else {
@@ -888,6 +957,8 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
           box("car", 1330, 660, 1.8, dRight, 0.8, 0.91),
         ]
       }(),
+      "roll": 5.5 * sin(mockPhase / 9.0),
+      "horizonY": 486.0,
       "laneCalib": ["cx": 960.0, "vy": 486.0, "n": 99] as [String: Any],
       "lane": [
         "left": [760.0 - 80.0 * sin(mockPhase / 7.0), 1080.0, 880.0, 626.0],

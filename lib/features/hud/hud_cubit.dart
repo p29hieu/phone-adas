@@ -134,6 +134,8 @@ class HudCubit extends Cubit<HudState> {
     }
     // Learned mount axis recenters the no-lane fallback band.
     _estimator.centerXOverride = frame.laneCalib?.cx;
+    // IMU roll: de-rotate bbox widths so a tilted mount cannot skew ranges.
+    _estimator.rollDeg = frame.roll ?? 0;
     final lead = _estimator.pickLead(frame);
     var distance = lead == null ? null : _estimator.estimate(lead);
 
@@ -222,12 +224,14 @@ class HudCubit extends Cubit<HudState> {
       alert: alert,
       departureCount: departed ? state.departureCount + 1 : null,
       leadDepthLidar: leadDepthLidar,
+      rollDeg: frame.roll ?? 0,
       lane: frame.lane,
       laneDebug: frame.laneDbg == null
           ? null
           : 'L${frame.laneDbg!['l']} R${frame.laneDbg!['r']} '
               '${frame.laneDbg!['gate']}'
-              '${frame.laneCalib == null ? '' : ' | c${frame.laneCalib!.cx.round()} n${frame.laneCalib!.n}'}',
+              '${frame.laneCalib == null ? '' : ' | c${frame.laneCalib!.cx.round()} n${frame.laneCalib!.n}'}'
+              '${frame.roll == null ? '' : ' | R${frame.roll!.toStringAsFixed(1)}° H${frame.horizonY?.round() ?? '-'}'}',
       laneStatus: _laneMonitor.status,
       laneEventCount: laneFired ? state.laneEventCount + 1 : null,
       detectedCars: rawCars,

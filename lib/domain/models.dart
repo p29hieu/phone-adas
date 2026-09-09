@@ -107,6 +107,8 @@ class AdasFrame {
     this.lane,
     this.laneDbg,
     this.laneCalib,
+    this.roll,
+    this.horizonY,
     required this.detections,
   });
 
@@ -128,6 +130,12 @@ class AdasFrame {
 
   /// Learned mount axis/horizon, once the native core has calibrated.
   final LaneCalib? laneCalib;
+
+  /// Image roll versus the world (deg, from the IMU; + = tilted clockwise).
+  final double? roll;
+
+  /// Live horizon row (px) from IMU pitch + intrinsics.
+  final double? horizonY;
   final List<Detection> detections;
 
   factory AdasFrame.fromMap(Map<dynamic, dynamic> m) => AdasFrame(
@@ -145,6 +153,8 @@ class AdasFrame {
         laneCalib: m['laneCalib'] is Map<dynamic, dynamic>
             ? LaneCalib.fromMap(m['laneCalib'] as Map<dynamic, dynamic>)
             : null,
+        roll: (m['roll'] as num?)?.toDouble(),
+        horizonY: (m['horizonY'] as num?)?.toDouble(),
         detections: (m['detections'] as List<dynamic>? ?? const [])
             .map((e) => Detection.fromMap(e as Map<dynamic, dynamic>))
             .toList(growable: false),

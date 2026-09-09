@@ -481,6 +481,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Manual speed control'**
   String get settingsManualSpeed;
+
+  /// No description provided for @hudTilted.
+  ///
+  /// In en, this message translates to:
+  /// **'Tilted {deg}°'**
+  String hudTilted(int deg);
 }
 
 class _AppLocalizationsDelegate

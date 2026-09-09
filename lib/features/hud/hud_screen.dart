@@ -398,6 +398,13 @@ class _HudScreenState extends State<HudScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
+                                if (state.rollDeg.abs() >= 4) ...[
+                                  StatusBadge(
+                                    l10n.hudTilted(state.rollDeg.abs().round()),
+                                    background: const Color(0xFFE65100),
+                                  ),
+                                  const SizedBox(height: 6),
+                                ],
                                 if (state.isRecording) ...[
                                   StatusBadge(
                                     'REC ${state.recordingStartedAt == null ? '' : _fmtElapsed(DateTime.now().difference(state.recordingStartedAt!))}',
@@ -725,12 +732,17 @@ class _LeadDistancePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final distance = state.leadDistanceM;
+    // Per product feedback: the lead distance dominates the screen
+    // (~30-40% of the view), like a head-up speed readout.
+    final numeralSize =
+        (MediaQuery.sizeOf(context).shortestSide * 0.34).clamp(64.0, 220.0);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+      padding: EdgeInsets.symmetric(
+          horizontal: numeralSize * 0.28, vertical: numeralSize * 0.08),
       decoration: BoxDecoration(
-        color: const Color(0xCC101418),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.7), width: 1.5),
+        color: const Color(0x99101418),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.7), width: 2),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -738,48 +750,54 @@ class _LeadDistancePanel extends StatelessWidget {
         children: [
           if (laneLocked)
             Padding(
-              padding: const EdgeInsets.only(right: 8, bottom: 6),
-              child: Icon(Icons.add_road, size: 18, color: color),
+              padding: EdgeInsets.only(
+                  right: numeralSize * 0.12, bottom: numeralSize * 0.12),
+              child:
+                  Icon(Icons.add_road, size: numeralSize * 0.28, color: color),
             ),
           if (distance == null)
             Padding(
-              padding: const EdgeInsets.only(bottom: 4),
+              padding: const EdgeInsets.symmetric(vertical: 8),
               child: Text(
                 l10n.hudNoLeadVehicle,
-                style: const TextStyle(color: Colors.white54, fontSize: 15),
+                style: const TextStyle(color: Colors.white54, fontSize: 18),
               ),
             )
           else ...[
-            HudNumeral(formatDistanceM(distance), size: 44, color: color),
-            const SizedBox(width: 4),
-            const Padding(
-              padding: EdgeInsets.only(bottom: 5),
+            HudNumeral(formatDistanceM(distance),
+                size: numeralSize, color: color),
+            SizedBox(width: numeralSize * 0.08),
+            Padding(
+              padding: EdgeInsets.only(bottom: numeralSize * 0.10),
               child: Text('m',
-                  style: TextStyle(color: Colors.white70, fontSize: 15)),
-            ),
-            if (state.leadDepthLidar)
-              Padding(
-                padding: const EdgeInsets.only(left: 8, bottom: 6),
-                child: Text(
-                  'LiDAR',
                   style: TextStyle(
-                    color: color,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                      color: Colors.white70, fontSize: numeralSize * 0.28)),
+            ),
+            Padding(
+              padding: EdgeInsets.only(left: numeralSize * 0.14),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (state.leadDepthLidar)
+                    Text(
+                      'LiDAR',
+                      style: TextStyle(
+                        color: color,
+                        fontSize: numeralSize * 0.14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  if (state.requiredGapM > 0)
+                    Text(
+                      l10n.hudRequiredGap(state.requiredGapM.round()),
+                      style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: numeralSize * 0.16),
+                    ),
+                ],
               ),
-            if (state.requiredGapM > 0) ...[
-              const SizedBox(width: 12),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 5),
-                child: Text(
-                  l10n.hudRequiredGap(state.requiredGapM.round()),
-                  style: const TextStyle(
-                      color: Colors.white54, fontSize: 13),
-                ),
-              ),
-            ],
+            ),
           ],
         ],
       ),

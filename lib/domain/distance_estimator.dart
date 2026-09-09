@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'models.dart';
 
 /// Pinhole-model distance: d = realWidth * fPx / bboxWidthPx.
@@ -24,6 +26,23 @@ class DistanceEstimator {
   /// overrides the static assumptions once enough samples accumulate.
   Map<String, double> widthOverrides = const {};
 
+  /// Image roll (deg) from the IMU; axis-aligned bboxes of a rolled image
+  /// inflate horizontally, so widths are de-rotated before the pinhole
+  /// formula (a 5-degree tilt otherwise reads ~6% too close).
+  double rollDeg = 0;
+
+  /// Recovers the true projected width of an upright rectangle from its
+  /// axis-aligned bbox in an image rolled by [rollDeg]. Identity below 2
+  /// degrees (noise) and above 15 (out of the small-angle model's league).
+  static double derotatedWidth(double w, double h, double rollDeg) {
+    final t = rollDeg.abs();
+    if (t < 2 || t > 15) return w;
+    final theta = t * math.pi / 180;
+    final denom = math.cos(2 * theta);
+    final derotated = (w * math.cos(theta) - h * math.sin(theta)) / denom;
+    return (derotated > 0 && derotated <= w) ? derotated : w;
+  }
+
   /// Assumed real vehicle widths per class, meters.
   static const Map<String, double> realWidthM = {
     'car': 1.8,
@@ -41,7 +60,8 @@ class DistanceEstimator {
   double? estimate(Detection d) {
     final w = widthOverrides[d.cls] ?? realWidthM[d.cls];
     if (w == null || d.w <= 0) return null;
-    return w * fPx / d.w * scale;
+    final effW = derotatedWidth(d.w, d.h, rollDeg);
+    return w * fPx / effW * scale;
   }
 
   /// Minimum lane confidence before the detected lane replaces the

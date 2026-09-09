@@ -114,6 +114,34 @@ void main() {
     expect(e.relevantDetections(frame([centered])), isEmpty);
   });
 
+  group('roll compensation (derotatedWidth)', () {
+    test('identity when level or beyond the model range', () {
+      expect(DistanceEstimator.derotatedWidth(100, 80, 0), 100);
+      expect(DistanceEstimator.derotatedWidth(100, 80, 1.5), 100);
+      expect(DistanceEstimator.derotatedWidth(100, 80, 20), 100);
+    });
+
+    test('recovers the true width of a 5-degree rolled box', () {
+      // True car box 94x80 rolled 5deg -> axis-aligned ~100.6x84.9.
+      final w = DistanceEstimator.derotatedWidth(100.6, 84.9, 5);
+      expect(w, closeTo(94.2, 1.5));
+      // Sign of the roll does not matter.
+      expect(DistanceEstimator.derotatedWidth(100.6, 84.9, -5),
+          closeTo(w, 0.001));
+    });
+
+    test('tilted mount no longer reads closer than reality', () {
+      final e = DistanceEstimator(fPx: 1500);
+      const det = Detection(
+          cls: 'car', conf: 0.9, x: 0, y: 0, w: 100.6, h: 84.9);
+      final level = e.estimate(det)!; // inflated bbox -> too close
+      e.rollDeg = 5;
+      final corrected = e.estimate(det)!;
+      expect(corrected, greaterThan(level));
+      expect(corrected, closeTo(1.8 * 1500 / 94.2, 1.0));
+    });
+  });
+
   test('pickLead ignores low-confidence detections', () {
     final e = DistanceEstimator();
     final lead = e.pickLead(frame([det('car', 960, 80, conf: 0.2)]));

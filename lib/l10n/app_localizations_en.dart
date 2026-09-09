@@ -216,4 +216,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsManualSpeed => 'Manual speed control';
+
+  @override
+  String hudTilted(int deg) {
+    return 'Tilted $deg°';
+  }
 }

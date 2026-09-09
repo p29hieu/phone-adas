@@ -63,5 +63,6 @@
   "recNeedCamera": "Cần camera thật để quay",
   "recTestModeOnly": "Bật Chế độ thử nghiệm để quay",
   "settingsShowLane": "Hiển thị làn đường",
-  "settingsManualSpeed": "Điều chỉnh tốc độ bằng tay"
+  "settingsManualSpeed": "Điều chỉnh tốc độ bằng tay",
+  "hudTilted": "Máy nghiêng {deg}°"
 }

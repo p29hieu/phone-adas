@@ -43,6 +43,7 @@ class HudState extends Equatable {
     this.requiredGapM = 0,
     this.alert = AdasAlert.none,
     this.leadDepthLidar = false,
+    this.rollDeg = 0,
     this.departureCount = 0,
     this.lane,
     this.laneDebug,
@@ -80,6 +81,9 @@ class HudState extends Equatable {
 
   /// True while the lead distance comes from LiDAR (close range, +/-2 cm).
   final bool leadDepthLidar;
+
+  /// IMU roll (deg) — drives the tilted-mount warning badge.
+  final double rollDeg;
 
   /// Increments once per "lead vehicle departed while stopped" event.
   final int departureCount;
@@ -126,6 +130,7 @@ class HudState extends Equatable {
     double? requiredGapM,
     AdasAlert? alert,
     bool? leadDepthLidar,
+    double? rollDeg,
     int? departureCount,
     Object? lane = _unset,
     String? laneDebug,
@@ -157,6 +162,7 @@ class HudState extends Equatable {
         requiredGapM: requiredGapM ?? this.requiredGapM,
         alert: alert ?? this.alert,
         leadDepthLidar: leadDepthLidar ?? this.leadDepthLidar,
+        rollDeg: rollDeg ?? this.rollDeg,
         departureCount: departureCount ?? this.departureCount,
         lane: identical(lane, _unset) ? this.lane : lane as LaneObservation?,
         laneDebug: laneDebug ?? this.laneDebug,
@@ -192,6 +198,7 @@ class HudState extends Equatable {
         requiredGapM,
         alert,
         leadDepthLidar,
+        rollDeg,
         departureCount,
         lane?.offset,
         lane?.conf,
