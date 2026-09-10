@@ -218,4 +218,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String hudTilted(int deg) {
     return 'Máy nghiêng $deg°';
   }
+
+  @override
+  String get cpSpeed => 'Tốc độ';
+
+  @override
+  String get cpWeather => 'Thời tiết';
+
+  @override
+  String get cpArea => 'Khu vực';
+
+  @override
+  String get cpRequiredGap => 'Khoảng cách tối thiểu';
 }

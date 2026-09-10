@@ -487,6 +487,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tilted {deg}°'**
   String hudTilted(int deg);
+
+  /// No description provided for @cpSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get cpSpeed;
+
+  /// No description provided for @cpWeather.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather'**
+  String get cpWeather;
+
+  /// No description provided for @cpArea.
+  ///
+  /// In en, this message translates to:
+  /// **'Area'**
+  String get cpArea;
+
+  /// No description provided for @cpRequiredGap.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum gap'**
+  String get cpRequiredGap;
 }
 
 class _AppLocalizationsDelegate

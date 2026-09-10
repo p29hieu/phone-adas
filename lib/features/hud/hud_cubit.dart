@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' as ui;
 import 'dart:ui' show Rect;
 
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -12,12 +13,14 @@ import '../../app/app_bloc_observer.dart';
 import '../../core/adas_channel.dart';
 import '../../domain/collision_warning.dart';
 import '../../domain/distance_estimator.dart';
+import '../../domain/distance_format.dart';
 import '../../domain/lane_monitor.dart';
 import '../../domain/lead_departure.dart';
 import '../../domain/models.dart';
 import '../../domain/safe_distance.dart';
 import '../../domain/solar.dart';
 import '../../domain/width_learner.dart';
+import '../../l10n/app_localizations.dart';
 import '../../services/weather_service.dart';
 import '../calibration/calibration_cubit.dart';
 import 'hud_state.dart';
@@ -46,6 +49,7 @@ class HudCubit extends Cubit<HudState> {
   /// "sensor sensitivity" slider via [applyDisplaySensitivity].
   Duration _displayInterval = const Duration(seconds: 1);
   DateTime? _lastDisplayAt;
+  DateTime? _lastCarPlayPush;
 
   StreamSubscription<AdasFrame>? _frameSub;
   StreamSubscription<Position>? _posSub;
@@ -213,6 +217,7 @@ class HudCubit extends Cubit<HudState> {
         now.difference(_lastDisplayAt!) >= _displayInterval;
     if (!mustDisplay) return;
     _lastDisplayAt = now;
+    _pushCarPlay();
 
     emit(state.copyWith(
       mock: frame.mock,
@@ -268,6 +273,53 @@ class HudCubit extends Cubit<HudState> {
   Future<void> _persistWidthLearner() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_widthLearnerKey, _widthLearner.serialize());
+  }
+
+  static const _weatherEmoji = {
+    WeatherKind.clear: '☀️',
+    WeatherKind.partlyCloudy: '⛅',
+    WeatherKind.cloudy: '☁️',
+    WeatherKind.fog: '🌫',
+    WeatherKind.drizzle: '🌦',
+    WeatherKind.rain: '🌧',
+    WeatherKind.snow: '❄️',
+    WeatherKind.thunderstorm: '⛈',
+  };
+
+  /// Mirrors the HUD essentials onto CarPlay (template rows, ~1 Hz).
+  /// Strings are localized here so the native scene stays dumb.
+  void _pushCarPlay() {
+    final now = DateTime.now();
+    if (_lastCarPlayPush != null &&
+        now.difference(_lastCarPlayPush!) < const Duration(seconds: 1)) {
+      return;
+    }
+    _lastCarPlayPush = now;
+    AppLocalizations l10n;
+    try {
+      l10n = lookupAppLocalizations(ui.PlatformDispatcher.instance.locale);
+    } catch (_) {
+      l10n = lookupAppLocalizations(const ui.Locale('en'));
+    }
+    final s = state;
+    final weather = s.weather;
+    unawaited(AdasChannel.updateCarPlay({
+      'distLabel': l10n.hudDistanceToLead,
+      'dist': s.leadDistanceM == null
+          ? ''
+          : '${formatDistanceM(s.leadDistanceM!)} m',
+      'speedLabel': l10n.cpSpeed,
+      'speed': '${s.speedKmh.round()} ${l10n.hudSpeedUnit}',
+      'gapLabel': l10n.cpRequiredGap,
+      'gap': s.requiredGapM > 0 ? '≥ ${s.requiredGapM.round()} m' : '',
+      'weatherLabel': l10n.cpWeather,
+      'weather': weather == null
+          ? ''
+          : '${_weatherEmoji[weather.kind] ?? ''} '
+              '${weather.tempC.round()}°C${weather.isStale ? ' *' : ''}',
+      'areaLabel': l10n.cpArea,
+      'area': s.areaName ?? '',
+    }));
   }
 
   /// Test-mode manual speed (0-130 km/h); null returns control to GPS.

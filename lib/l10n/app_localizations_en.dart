@@ -221,4 +221,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String hudTilted(int deg) {
     return 'Tilted $deg°';
   }
+
+  @override
+  String get cpSpeed => 'Speed';
+
+  @override
+  String get cpWeather => 'Weather';
+
+  @override
+  String get cpArea => 'Area';
+
+  @override
+  String get cpRequiredGap => 'Minimum gap';
 }

@@ -67,6 +67,7 @@ object AdasCore {
                 when (call.method) {
                     "start" -> { start(); result.success(mapOf("textureId" to null)) }
                     "stop" -> { stop(); result.success(null) }
+                    "updateCarPlay" -> result.success(null) // iOS-only surface
                     "getVersion" -> result.success(
                         mapOf("version" to versionName, "build" to versionCode),
                     )

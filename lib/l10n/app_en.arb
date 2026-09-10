@@ -109,5 +109,9 @@
         "type": "int"
       }
     }
-  }
+  },
+  "cpSpeed": "Speed",
+  "cpWeather": "Weather",
+  "cpArea": "Area",
+  "cpRequiredGap": "Minimum gap"
 }

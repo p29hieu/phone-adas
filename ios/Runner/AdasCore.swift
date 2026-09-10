@@ -142,6 +142,11 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     case "beep":
       AudioServicesPlaySystemSound(1052)
       result(nil)
+    case "updateCarPlay":
+      if let values = call.arguments as? [String: String] {
+        CarplayBridge.shared.update(values)
+      }
+      result(nil)
     case "getVersion":
       let info = Bundle.main.infoDictionary
       result([

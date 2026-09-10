@@ -132,6 +132,27 @@ Without the model the app still runs — live preview + mock detections.
 YOLO11 weights are AGPL-3.0: fine for personal use, re-check before any
 public distribution.
 
+## CarPlay (dormant until Apple grants the entitlement)
+
+The code ships a CarPlay "driving task" scene (`ios/Runner/CarPlayScene.swift`,
+`CPInformationTemplate`) showing lead distance, speed, minimum legal gap,
+weather and current area, fed at 1 Hz from the HUD cubit
+(`updateCarPlay` on the control channel, pre-localized strings). CarPlay
+forbids live video for this category — the camera view stays on the phone,
+and the phone app must remain foregrounded (rows dash out after 5 s stale).
+
+It stays dormant until Apple grants the CarPlay entitlement:
+1. Apply at https://developer.apple.com/contact/carplay/ (category:
+   driving task, `com.apple.developer.carplay-driving-task`). Needs a paid
+   developer account; review takes weeks.
+2. Once granted: enable the entitlement for the bundle id in the developer
+   portal, regenerate the provisioning profile, and add
+   `com.apple.developer.carplay-driving-task` = true to
+   `ios/Runner/Runner.entitlements`. Do NOT add it before approval — device
+   code-signing fails with an ungranted entitlement.
+3. Test with the CarPlay Simulator (Xcode → Open Developer Tool →
+   "Additional Tools" download) or a head unit.
+
 ## Testing
 
 ```bash

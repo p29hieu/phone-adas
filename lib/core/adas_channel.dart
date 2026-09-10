@@ -48,6 +48,11 @@ class AdasChannel {
   static Future<String?> stopRecording() =>
       _control.invokeMethod<String>('stopRecording');
 
+  /// Pushes pre-localized display strings to the CarPlay scene (iOS only;
+  /// silently ignored elsewhere or when no CarPlay display is connected).
+  static Future<void> updateCarPlay(Map<String, String> values) =>
+      _control.invokeMethod('updateCarPlay', values);
+
   /// App version label, e.g. "v1.1.0 (2)" — shown in the dev-mode chip so
   /// every field screenshot identifies its build.
   static Future<String?> versionLabel() async {

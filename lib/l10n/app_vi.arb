@@ -64,5 +64,9 @@
   "recTestModeOnly": "Bật Chế độ thử nghiệm để quay",
   "settingsShowLane": "Hiển thị làn đường",
   "settingsManualSpeed": "Điều chỉnh tốc độ bằng tay",
-  "hudTilted": "Máy nghiêng {deg}°"
+  "hudTilted": "Máy nghiêng {deg}°",
+  "cpSpeed": "Tốc độ",
+  "cpWeather": "Thời tiết",
+  "cpArea": "Khu vực",
+  "cpRequiredGap": "Khoảng cách tối thiểu"
 }
