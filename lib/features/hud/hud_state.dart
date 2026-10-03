@@ -16,6 +16,7 @@ class TrackedVehicle extends Equatable {
     required this.rect,
     required this.distanceM,
     required this.isLead,
+    this.laneSlot = 0,
   });
 
   final String cls;
@@ -27,8 +28,11 @@ class TrackedVehicle extends Equatable {
   /// True for the vehicle used for gap/collision alerts (in our lane).
   final bool isLead;
 
+  /// -1 left lane, 0 ego lane, +1 right lane — for the 3D scene view.
+  final int laneSlot;
+
   @override
-  List<Object?> get props => [cls, rect, distanceM, isLead];
+  List<Object?> get props => [cls, rect, distanceM, isLead, laneSlot];
 }
 
 class HudState extends Equatable {
@@ -38,6 +42,7 @@ class HudState extends Equatable {
     this.mock = false,
     this.leadDistanceM,
     this.vehicles = const [],
+    this.sceneVehicles = const [],
     this.frameW = 1920,
     this.frameH = 1080,
     this.requiredGapM = 0,
@@ -72,8 +77,11 @@ class HudState extends Equatable {
   final bool mock;
   final double? leadDistanceM;
 
-  /// All valid detections with distances, for the AR overlay.
+  /// The in-lane lead only (product rule: one vehicle, one number).
   final List<TrackedVehicle> vehicles;
+
+  /// All nearby vehicles with lane slots, for the Tesla-style scene view.
+  final List<TrackedVehicle> sceneVehicles;
   final int frameW;
   final int frameH;
   final double requiredGapM;
@@ -125,6 +133,7 @@ class HudState extends Equatable {
     bool? mock,
     Object? leadDistanceM = _unset,
     List<TrackedVehicle>? vehicles,
+    List<TrackedVehicle>? sceneVehicles,
     int? frameW,
     int? frameH,
     double? requiredGapM,
@@ -157,6 +166,7 @@ class HudState extends Equatable {
             ? this.leadDistanceM
             : leadDistanceM as double?,
         vehicles: vehicles ?? this.vehicles,
+        sceneVehicles: sceneVehicles ?? this.sceneVehicles,
         frameW: frameW ?? this.frameW,
         frameH: frameH ?? this.frameH,
         requiredGapM: requiredGapM ?? this.requiredGapM,
@@ -193,6 +203,7 @@ class HudState extends Equatable {
         mock,
         leadDistanceM,
         vehicles,
+        sceneVehicles,
         frameW,
         frameH,
         requiredGapM,

@@ -511,6 +511,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Minimum gap'**
   String get cpRequiredGap;
+
+  /// No description provided for @settingsHoodOffset.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone to front bumper'**
+  String get settingsHoodOffset;
+
+  /// No description provided for @viewScene.
+  ///
+  /// In en, this message translates to:
+  /// **'3D'**
+  String get viewScene;
+
+  /// No description provided for @viewCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get viewCamera;
 }
 
 class _AppLocalizationsDelegate

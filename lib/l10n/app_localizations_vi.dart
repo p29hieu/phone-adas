@@ -230,4 +230,13 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get cpRequiredGap => 'Khoảng cách tối thiểu';
+
+  @override
+  String get settingsHoodOffset => 'Khoảng cách điện thoại → đầu xe';
+
+  @override
+  String get viewScene => '3D';
+
+  @override
+  String get viewCamera => 'Camera';
 }

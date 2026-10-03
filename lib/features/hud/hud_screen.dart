@@ -19,6 +19,7 @@ import '../../services/weather_service.dart';
 import '../calibration/calibration_screen.dart';
 import '../../core/adas_channel.dart';
 import 'lane_overlay.dart';
+import 'scene_view.dart';
 import '../settings/settings_cubit.dart';
 import 'hud_cubit.dart';
 import 'hud_state.dart';
@@ -155,11 +156,24 @@ class _HudScreenState extends State<HudScreen> {
         onTap: () => _comingSoon(l10n),
       );
 
+  Widget _viewButton(AppLocalizations l10n) {
+    final scene =
+        context.watch<SettingsCubit>().state.viewMode == ViewMode.scene;
+    return _ToolbarButton(
+      icon: scene ? Icons.videocam_outlined : Icons.view_in_ar,
+      label: scene ? l10n.viewCamera : l10n.viewScene,
+      onTap: () => context
+          .read<SettingsCubit>()
+          .setViewMode(scene ? ViewMode.camera : ViewMode.scene),
+    );
+  }
+
   List<Widget> _allButtons(AppLocalizations l10n, HudState state) => [
         _recordButton(l10n, state),
         _photoButton(l10n),
         _settingsButton(l10n),
         _historyButton(l10n),
+        _viewButton(l10n),
       ];
 
   static String _fmtElapsed(Duration d) {
@@ -348,7 +362,8 @@ class _HudScreenState extends State<HudScreen> {
                 ),
                 if (context.watch<SettingsCubit>().state.testMode &&
                     context.watch<SettingsCubit>().state.showLane &&
-                    state.lane != null)
+                    state.lane != null &&
+                    state.lane!.conf >= 0.6)
                   LaneOverlay(
                     lane: state.lane!,
                     frameSize:
@@ -367,6 +382,9 @@ class _HudScreenState extends State<HudScreen> {
                         _bubbleFor(v, state),
                   ],
                 ),
+                if (context.watch<SettingsCubit>().state.viewMode ==
+                    ViewMode.scene)
+                  SceneView(state: state, leadColor: _alertColor(state)),
                 PulsingBorder(
                   active: state.alert == AdasAlert.collision ||
                       state.alert == AdasAlert.collisionCritical,
@@ -488,6 +506,7 @@ class _HudScreenState extends State<HudScreen> {
                         child: _ButtonPill(
                           vertical: true,
                           children: [
+                            _viewButton(l10n),
                             _settingsButton(l10n),
                             _historyButton(l10n),
                           ],
@@ -1040,6 +1059,19 @@ class _SettingsSheet extends StatelessWidget {
                         textAlign: TextAlign.center),
                   ),
                 ],
+              ),
+              Text(
+                '${l10n.settingsHoodOffset}: '
+                '${settings.hoodOffsetM.toStringAsFixed(1)} m',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              Slider(
+                value: settings.hoodOffsetM,
+                min: 0,
+                max: 3,
+                divisions: 30,
+                label: '${settings.hoodOffsetM.toStringAsFixed(1)} m',
+                onChanged: (v) => cubit.setHoodOffset(v),
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,

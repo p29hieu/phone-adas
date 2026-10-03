@@ -233,4 +233,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cpRequiredGap => 'Minimum gap';
+
+  @override
+  String get settingsHoodOffset => 'Phone to front bumper';
+
+  @override
+  String get viewScene => '3D';
+
+  @override
+  String get viewCamera => 'Camera';
 }

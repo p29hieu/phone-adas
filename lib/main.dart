@@ -64,10 +64,13 @@ class _PhoneAdasAppState extends State<PhoneAdasApp> {
         listenWhen: (prev, next) =>
             prev.sensitivity != next.sensitivity ||
             prev.testMode != next.testMode ||
-            prev.manualSpeed != next.manualSpeed,
+            prev.manualSpeed != next.manualSpeed ||
+            prev.hoodOffsetM != next.hoodOffsetM ||
+            prev.loaded != next.loaded,
         listener: (context, settings) {
           final hud = context.read<HudCubit>();
           hud.applyDisplaySensitivity(settings.sensitivity);
+          hud.setHoodOffset(settings.hoodOffsetM);
           if (!settings.testMode || !settings.manualSpeed) {
             // A simulated speed must never drive the legal-gap logic when
             // its control surface is not available.

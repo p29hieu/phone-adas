@@ -113,5 +113,8 @@
   "cpSpeed": "Speed",
   "cpWeather": "Weather",
   "cpArea": "Area",
-  "cpRequiredGap": "Minimum gap"
+  "cpRequiredGap": "Minimum gap",
+  "settingsHoodOffset": "Phone to front bumper",
+  "viewScene": "3D",
+  "viewCamera": "Camera"
 }

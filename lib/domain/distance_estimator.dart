@@ -75,28 +75,38 @@ class DistanceEstimator {
   /// available, otherwise within the central band of the frame. Everything
   /// else (parked cars, opposing traffic at the frame edges) is ignored by
   /// the overlay and the alert pipeline.
-  List<Detection> relevantDetections(AdasFrame f) {
+  /// Lane slot of a detection: -1 = left of the ego lane, 0 = in the ego
+  /// lane, +1 = right of it. Uses the detected lane lines at the bbox foot
+  /// when available, the (mount-calibrated) central band otherwise.
+  int laneSlot(Detection d, AdasFrame f) {
+    final cx = d.x + d.w / 2;
     final lane = f.lane;
-    final useLane = lane != null && lane.conf >= laneMinConf;
-    bool inside(Detection d) {
-      final cx = d.x + d.w / 2;
-      if (useLane) {
-        final yBottom = d.y + d.h;
-        final xl = lane.left.xAt(yBottom);
-        final xr = lane.right.xAt(yBottom);
-        if (xr <= xl) return false;
+    if (lane != null && lane.conf >= laneMinConf) {
+      final yBottom = d.y + d.h;
+      final xl = lane.left.xAt(yBottom);
+      final xr = lane.right.xAt(yBottom);
+      if (xr > xl) {
         final margin = (xr - xl) * laneMarginRatio;
-        return cx >= xl - margin && cx <= xr + margin;
+        if (cx < xl - margin) return -1;
+        if (cx > xr + margin) return 1;
+        return 0;
       }
-      final bandCenter = centerXOverride ?? f.frameW / 2;
-      return (cx - bandCenter).abs() <= f.frameW * laneBandHalfWidth;
     }
+    final bandCenter = centerXOverride ?? f.frameW / 2;
+    final half = f.frameW * laneBandHalfWidth;
+    if (cx < bandCenter - half) return -1;
+    if (cx > bandCenter + half) return 1;
+    return 0;
+  }
 
+  /// Vehicles that matter: inside the detected ego lane when one is
+  /// available, otherwise within the central band of the frame.
+  List<Detection> relevantDetections(AdasFrame f) {
     return [
       for (final d in f.detections)
         if (realWidthM.containsKey(d.cls) &&
             d.conf >= minConfidence &&
-            inside(d))
+            laneSlot(d, f) == 0)
           d,
     ];
   }

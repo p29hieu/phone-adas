@@ -68,5 +68,8 @@
   "cpSpeed": "Tốc độ",
   "cpWeather": "Thời tiết",
   "cpArea": "Khu vực",
-  "cpRequiredGap": "Khoảng cách tối thiểu"
+  "cpRequiredGap": "Khoảng cách tối thiểu",
+  "settingsHoodOffset": "Khoảng cách điện thoại → đầu xe",
+  "viewScene": "3D",
+  "viewCamera": "Camera"
 }

@@ -15,6 +15,9 @@ enum AlertSound { voice, beep, off }
 /// The four announceable alert types.
 enum AlertKind { departure, collision, lane, gap }
 
+/// HUD rendering mode: live camera + AR overlay, or the Tesla-style scene.
+enum ViewMode { camera, scene }
+
 class SettingsState extends Equatable {
   const SettingsState({
     this.themePref = ThemePref.auto,
@@ -28,6 +31,8 @@ class SettingsState extends Equatable {
     this.soundGap = AlertSound.voice,
     this.showLane = true,
     this.manualSpeed = true,
+    this.hoodOffsetM = 0.7,
+    this.viewMode = ViewMode.camera,
     this.loaded = false,
   });
 
@@ -54,6 +59,11 @@ class SettingsState extends Equatable {
 
   /// Test-mode sub-feature: manual speed slider.
   final bool manualSpeed;
+
+  /// Phone-to-front-bumper distance (m), subtracted from every measured
+  /// distance so readouts and legal gaps are bumper-to-bumper.
+  final double hoodOffsetM;
+  final ViewMode viewMode;
   final bool loaded;
 
   AlertSound soundFor(AlertKind kind) => switch (kind) {
@@ -89,6 +99,8 @@ class SettingsState extends Equatable {
     AlertSound? soundGap,
     bool? showLane,
     bool? manualSpeed,
+    double? hoodOffsetM,
+    ViewMode? viewMode,
     bool? loaded,
   }) =>
       SettingsState(
@@ -103,6 +115,8 @@ class SettingsState extends Equatable {
         soundGap: soundGap ?? this.soundGap,
         showLane: showLane ?? this.showLane,
         manualSpeed: manualSpeed ?? this.manualSpeed,
+        hoodOffsetM: hoodOffsetM ?? this.hoodOffsetM,
+        viewMode: viewMode ?? this.viewMode,
         loaded: loaded ?? this.loaded,
       );
 
@@ -119,6 +133,8 @@ class SettingsState extends Equatable {
         soundGap,
         showLane,
         manualSpeed,
+        hoodOffsetM,
+        viewMode,
         loaded,
       ];
 }
@@ -134,6 +150,8 @@ class SettingsCubit extends Cubit<SettingsState> {
   static const _kSoundPrefix = 'settings_alert_sound_v1_';
   static const _kShowLane = 'settings_show_lane_v1';
   static const _kManualSpeed = 'settings_manual_speed_v1';
+  static const _kHoodOffset = 'settings_hood_offset_v1';
+  static const _kViewMode = 'settings_view_mode_v1';
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -149,6 +167,9 @@ class SettingsCubit extends Cubit<SettingsState> {
       soundGap: _loadSound(prefs, AlertKind.gap),
       showLane: prefs.getBool(_kShowLane) ?? true,
       manualSpeed: prefs.getBool(_kManualSpeed) ?? true,
+      hoodOffsetM: (prefs.getDouble(_kHoodOffset) ?? 0.7).clamp(0.0, 3.0),
+      viewMode: ViewMode
+          .values[(prefs.getInt(_kViewMode) ?? 0).clamp(0, 1)],
       loaded: true,
     ));
   }
@@ -192,6 +213,19 @@ class SettingsCubit extends Cubit<SettingsState> {
     });
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('$_kSoundPrefix${kind.name}', sound.index);
+  }
+
+  Future<void> setHoodOffset(double meters) async {
+    final clamped = meters.clamp(0.0, 3.0);
+    emit(state.copyWith(hoodOffsetM: clamped));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_kHoodOffset, clamped);
+  }
+
+  Future<void> setViewMode(ViewMode mode) async {
+    emit(state.copyWith(viewMode: mode));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_kViewMode, mode.index);
   }
 
   Future<void> setShowLane(bool on) async {

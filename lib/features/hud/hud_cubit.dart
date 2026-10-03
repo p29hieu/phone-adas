@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'dart:ui' show Rect;
 
@@ -47,6 +48,9 @@ class HudCubit extends Cubit<HudState> {
   /// Displayed distances refresh at this interval; the safety pipeline and
   /// alerts always run per frame (~10 Hz). Configured from the settings
   /// "sensor sensitivity" slider via [applyDisplaySensitivity].
+  /// Phone-to-front-bumper distance (m); readouts are bumper-to-bumper.
+  double _hoodOffsetM = 0.7;
+
   Duration _displayInterval = const Duration(seconds: 1);
   DateTime? _lastDisplayAt;
   DateTime? _lastCarPlayPush;
@@ -87,6 +91,10 @@ class HudCubit extends Cubit<HudState> {
     } catch (_) {
       return false;
     }
+  }
+
+  void setHoodOffset(double meters) {
+    _hoodOffsetM = meters.clamp(0.0, 3.0);
   }
 
   /// [level] 1-10 = displayed updates per second.
@@ -150,7 +158,13 @@ class HudCubit extends Cubit<HudState> {
     if (lead != null && depth != null && depth > 0.3 && depth < 7) {
       distance = depth;
       leadDepthLidar = true;
+      // Width learning stays in RAW phone-to-target geometry.
       _learnWidthFrom(lead, depth);
+    }
+    // Everything downstream — readout, legal gap, alerts — is
+    // bumper-to-bumper: subtract the phone-to-bumper offset.
+    if (distance != null) {
+      distance = math.max(0, distance - _hoodOffsetM);
     }
 
     // Overlay + alerts see only relevant vehicles (in-lane when a lane is
@@ -165,15 +179,32 @@ class HudCubit extends Cubit<HudState> {
         rawCars++;
       }
     }
-    final vehicles = <TrackedVehicle>[];
-    for (final d in _estimator.relevantDetections(frame)) {
-      final dist = _estimator.estimate(d);
-      if (dist == null) continue;
-      vehicles.add(TrackedVehicle(
+    // Product rule: the AR overlay annotates exactly ONE vehicle — the
+    // nearest one in our lane.
+    final vehicles = <TrackedVehicle>[
+      if (lead != null && distance != null)
+        TrackedVehicle(
+          cls: lead.cls,
+          rect: Rect.fromLTWH(lead.x, lead.y, lead.w, lead.h),
+          distanceM: distance,
+          isLead: true,
+        ),
+    ];
+    // The scene view wants the neighborhood: ego lane + both adjacent lanes.
+    final sceneVehicles = <TrackedVehicle>[];
+    for (final d in frame.detections) {
+      if (d.conf < DistanceEstimator.minConfidence) continue;
+      if (!DistanceEstimator.realWidthM.containsKey(d.cls)) continue;
+      final raw = _estimator.estimate(d);
+      if (raw == null) continue;
+      final dist = math.max(0.0, raw - _hoodOffsetM);
+      if (dist > 120) continue;
+      sceneVehicles.add(TrackedVehicle(
         cls: d.cls,
         rect: Rect.fromLTWH(d.x, d.y, d.w, d.h),
         distanceM: dist,
         isLead: identical(d, lead),
+        laneSlot: _estimator.laneSlot(d, frame),
       ));
     }
 
@@ -223,6 +254,7 @@ class HudCubit extends Cubit<HudState> {
       mock: frame.mock,
       leadDistanceM: distance,
       vehicles: vehicles,
+      sceneVehicles: sceneVehicles,
       frameW: frame.frameW,
       frameH: frame.frameH,
       requiredGapM: SafeDistance.legalMinimumMeters(state.speedKmh),

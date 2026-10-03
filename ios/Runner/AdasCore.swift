@@ -757,6 +757,13 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     let yB = Double(yBot), yT = Double(yTop)
     var lFitOpt = leftPts.count >= 6 ? Self.fitLineTrimmed(leftPts) : nil
     var rFitOpt = rightPts.count >= 6 ? Self.fitLineTrimmed(rightPts) : nil
+    // Residual gate: scan hits that do not actually lie on a line (clutter,
+    // shadows, mixed targets) still produce a fit — but a scattered one.
+    // Reject the side so the rescue/coast path takes over instead of
+    // drawing a line that matches nothing on the road.
+    let residLimit = 14.0 * scale
+    if let fit = lFitOpt, Self.rmsResidual(leftPts, fit) > residLimit { lFitOpt = nil }
+    if let fit = rFitOpt, Self.rmsResidual(rightPts, fit) > residLimit { rFitOpt = nil }
     var oneSided = false
 
     // One-sided rescue: VN curb lanes often have paint on ONE side only
@@ -887,6 +894,17 @@ final class AdasCore: NSObject, FlutterPlugin, FlutterStreamHandler, FlutterText
     let xT = fit.a * yT + fit.b + sign * width(yT)
     let a = (xB - xT) / (yB - yT)
     return (a: a, b: xB - a * yB)
+  }
+
+  private static func rmsResidual(_ pts: [(y: Double, x: Double)],
+                                  _ fit: (a: Double, b: Double)) -> Double {
+    guard !pts.isEmpty else { return .infinity }
+    var sum = 0.0
+    for p in pts {
+      let r = p.x - (fit.a * p.y + fit.b)
+      sum += r * r
+    }
+    return (sum / Double(pts.count)).squareRoot()
   }
 
   /// Least-squares fit of x = a*y + b with one MAD-based trimming round.

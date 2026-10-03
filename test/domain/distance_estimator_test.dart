@@ -142,6 +142,24 @@ void main() {
     });
   });
 
+  group('laneSlot', () {
+    test('classifies left / ego / right against detected lane lines', () {
+      final e = DistanceEstimator();
+      final f = frameWithLane([]);
+      expect(e.laneSlot(det('motorcycle', 400, 120), f), -1);
+      expect(e.laneSlot(det('car', 960, 60), f), 0);
+      expect(e.laneSlot(det('car', 1500, 80), f), 1);
+    });
+
+    test('falls back to the calibrated band without a lane', () {
+      final e = DistanceEstimator()..centerXOverride = 1200;
+      final f = frame([]);
+      expect(e.laneSlot(det('car', 1200, 60), f), 0);
+      expect(e.laneSlot(det('car', 700, 60), f), -1);
+      expect(e.laneSlot(det('car', 1700, 60), f), 1);
+    });
+  });
+
   test('pickLead ignores low-confidence detections', () {
     final e = DistanceEstimator();
     final lead = e.pickLead(frame([det('car', 960, 80, conf: 0.2)]));
